@@ -85,3 +85,64 @@ create policy "anyone insert events" on public.events
 drop policy if exists "admin read events" on public.events;
 create policy "admin read events" on public.events
   for select to authenticated using (true);
+
+-- 7. Lead-uri (cereri trimise din calendarul public)
+-- Publicul poate DOAR insera (trimite o cerere). Doar adminul autentificat le poate citi/edita/șterge.
+-- Conține date personale (nume, telefon, email) → niciodată citibile de anonimi.
+create table if not exists public.leads (
+  id uuid primary key default gen_random_uuid(),
+  date date,
+  couple text,
+  location text,
+  pkg text,
+  notes text,
+  name text,
+  phone text,
+  email text,
+  status text not null default 'neprelucrat',
+  avans_incasat boolean not null default false,
+  plata_integrala boolean not null default false,
+  facturat boolean not null default false,
+  livrat boolean not null default false,
+  contract_semnat boolean not null default false,
+  data_confirmata boolean not null default false,
+  recenzie_primita boolean not null default false,
+  created_at timestamptz default now()
+);
+alter table public.leads enable row level security;
+
+-- dacă tabelul exista deja dintr-o versiune mai veche, adaugă coloanele CRM noi
+alter table public.leads add column if not exists avans_incasat boolean not null default false;
+alter table public.leads add column if not exists plata_integrala boolean not null default false;
+alter table public.leads add column if not exists facturat boolean not null default false;
+alter table public.leads add column if not exists livrat boolean not null default false;
+alter table public.leads add column if not exists contract_semnat boolean not null default false;
+alter table public.leads add column if not exists data_confirmata boolean not null default false;
+alter table public.leads add column if not exists recenzie_primita boolean not null default false;
+alter table public.leads alter column status set default 'neprelucrat';
+
+-- migrează statusurile vechi și pune constrângerea (pipeline-ul nou)
+update public.leads set status = 'neprelucrat' where status = 'nou';
+update public.leads set status = 'castigat' where status = 'convertit';
+update public.leads set status = 'anulat' where status = 'respins';
+alter table public.leads drop constraint if exists leads_status_check;
+alter table public.leads add constraint leads_status_check
+  check (status in ('neprelucrat', 'contactat', 'oferta_trimisa', 'castigat', 'anulat'));
+
+drop policy if exists "anyone insert leads" on public.leads;
+create policy "anyone insert leads" on public.leads
+  for insert to anon, authenticated with check (true);
+
+drop policy if exists "admin read leads" on public.leads;
+create policy "admin read leads" on public.leads
+  for select to authenticated using (true);
+
+drop policy if exists "admin update leads" on public.leads;
+create policy "admin update leads" on public.leads
+  for update to authenticated using (true) with check (true);
+
+drop policy if exists "admin delete leads" on public.leads;
+create policy "admin delete leads" on public.leads
+  for delete to authenticated using (true);
+
+alter publication supabase_realtime add table public.leads;

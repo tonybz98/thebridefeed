@@ -22,6 +22,18 @@ function localUpsert(b) {
 }
 function localDelete(date) { localPersist(localList().filter((b) => b.date !== date)); }
 
+/* leads (fallback local) */
+const LKEY_LEADS = 'tbf_leads_v1';
+function localLeads() {
+  if (typeof localStorage === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem(LKEY_LEADS) || '[]'); } catch { return []; }
+}
+function localLeadsPersist(list) {
+  localStorage.setItem(LKEY_LEADS, JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('tbf:leads'));
+}
+function localLeadId() { return 'l' + Date.now() + Math.random().toString(36).slice(2, 7); }
+
 /* ----------------- API public ----------------- */
 
 // PUBLIC: doar datele ocupate (fără date personale)
@@ -61,6 +73,70 @@ export async function deleteBooking(date) {
     return;
   }
   localDelete(date);
+}
+
+/* ----------------- leads (cereri din calendarul public) ----------------- */
+// PUBLIC: oricine poate trimite un lead. Citirea/editarea — doar adminul.
+export async function createLead(lead) {
+  if (REMOTE) {
+    const row = {
+      date: lead.date || null, couple: lead.couple || null, location: lead.location || null,
+      pkg: lead.pkg || null, notes: lead.notes || null,
+      name: lead.name || null, phone: lead.phone || null, email: lead.email || null,
+    };
+    const { error } = await supabase.from('leads').insert(row);
+    if (error) throw error;
+    return;
+  }
+  const list = localLeads();
+  list.unshift({ id: localLeadId(), status: 'neprelucrat', created_at: new Date().toISOString(), ...lead });
+  localLeadsPersist(list);
+}
+
+export async function listLeads() {
+  if (REMOTE) {
+    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    if (error) { console.error('listLeads', error); return []; }
+    return data;
+  }
+  return localLeads();
+}
+
+export async function updateLeadStatus(id, status) {
+  return updateLead(id, { status });
+}
+
+// patch = orice câmpuri CRM (status, avans_incasat, facturat, notes, ...)
+export async function updateLead(id, patch) {
+  if (REMOTE) {
+    const { error } = await supabase.from('leads').update(patch).eq('id', id);
+    if (error) throw error;
+    return;
+  }
+  localLeadsPersist(localLeads().map((l) => (l.id === id ? { ...l, ...patch } : l)));
+}
+
+export async function deleteLead(id) {
+  if (REMOTE) {
+    const { error } = await supabase.from('leads').delete().eq('id', id);
+    if (error) throw error;
+    return;
+  }
+  localLeadsPersist(localLeads().filter((l) => l.id !== id));
+}
+
+export function subscribeLeads(cb) {
+  if (REMOTE) {
+    const ch = supabase
+      .channel('tbf-leads')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, cb)
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }
+  const h = () => cb();
+  window.addEventListener('tbf:leads', h);
+  window.addEventListener('storage', (e) => { if (e.key === LKEY_LEADS) cb(); });
+  return () => window.removeEventListener('tbf:leads', h);
 }
 
 // se declanșează la orice schimbare (Supabase realtime sau evenimente locale)

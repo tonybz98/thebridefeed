@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { SITE } from '../consts';
+import { SITE, PACKAGES } from '../consts';
 ---
 <Base
   title={`Disponibilitate — ${SITE.name}`}
@@ -10,7 +10,7 @@ import { SITE } from '../consts';
     <div class="container">
       <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>disponibilitate</span>
       <h1 class="h-lg">Verifică disponibilitatea</h1>
-      <p class="lead mt-2">Alege o zi liberă din calendar și ne scrii direct pe WhatsApp, cu data deja completată. Zilele tăiate sunt deja rezervate.</p>
+      <p class="lead mt-2">Alege o zi liberă din calendar, completezi câteva detalii și îți răspundem repede pe WhatsApp. Zilele tăiate sunt deja rezervate.</p>
 
       <div class="avail-wrap mt-3">
         <div>
@@ -22,7 +22,7 @@ import { SITE } from '../consts';
         </div>
         <div class="avail-note">
           <h2 class="h-md">Cum merge</h2>
-          <p>Calendarul arată în timp real ce zile mai avem libere din sezon. Dai click pe o zi liberă, se deschide WhatsApp cu data completată, iar noi îți confirmăm pe loc dacă o blocăm.</p>
+          <p>Calendarul arată în timp real ce zile mai avem libere din sezon. Dai click pe o zi liberă, completezi un formular scurt (numele tău, telefon și ce pachet te interesează), iar noi îți confirmăm disponibilitatea pe WhatsApp.</p>
           <p style="margin-top: .8rem;">Locurile din sezonul cald se ocupă repede — dacă ai deja data nunții, scrie-ne cât mai devreme.</p>
           <a href={SITE.whatsapp} class="btn btn-primary mt-2" target="_blank" rel="noopener">Scrie-ne direct</a>
         </div>
@@ -69,26 +69,82 @@ import { SITE } from '../consts';
     </div>
   </section>
 
+  <dialog class="modal" id="leadModal">
+    <form class="modal-in" id="leadForm">
+      <h3>Verifică disponibilitatea</h3>
+      <p style="color: var(--muted); font-size: .9rem; margin: -.6rem 0 1rem;">Pentru <b id="leadDateLabel" style="color: var(--coral-ink);"></b>. Completează și îți răspundem repede pe WhatsApp.</p>
+      <input type="hidden" id="l-date" />
+      <div class="field"><label for="l-name">Numele tău *</label><input type="text" id="l-name" required placeholder="Ex. Andra" /></div>
+      <div class="field"><label for="l-phone">Telefon *</label><input type="tel" id="l-phone" required placeholder="07xx xxx xxx" /></div>
+      <div class="field"><label for="l-email">Email</label><input type="email" id="l-email" placeholder="opțional" /></div>
+      <div class="field"><label for="l-couple">Numele mirilor</label><input type="text" id="l-couple" placeholder="Ex. Andra & Vlad" /></div>
+      <div class="field"><label for="l-location">Locația nunții</label><input type="text" id="l-location" placeholder="Ex. Restaurant X, București" /></div>
+      <div class="field"><label for="l-pkg">Pachet dorit</label>
+        <select id="l-pkg"><option value="">— alege (opțional) —</option>{PACKAGES.map((p) => <option value={p.name}>{p.name}</option>)}</select>
+      </div>
+      <div class="field"><label for="l-notes">Mesaj</label><textarea id="l-notes" placeholder="Câteva detalii despre nuntă..."></textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="l-cancel">Anulează</button>
+        <button type="submit" class="btn btn-primary" style="margin-left: auto;">Trimite & deschide WhatsApp</button>
+      </div>
+    </form>
+  </dialog>
+
   <script>
-    import { createCalendar } from '../lib/calendar.js';
-    import { listBookedDates, subscribe } from '../lib/store.js';
+    import { createCalendar, prettyDate } from '../lib/calendar.js';
+    import { listBookedDates, subscribe, createLead } from '../lib/store.js';
 
     const root = document.getElementById('cal');
+    const wa = root?.dataset.whatsapp || '';
+    const modal = document.getElementById('leadModal') as HTMLDialogElement;
+    const dateLabel = document.getElementById('leadDateLabel');
+    const lf = {
+      date: document.getElementById('l-date') as HTMLInputElement,
+      name: document.getElementById('l-name') as HTMLInputElement,
+      phone: document.getElementById('l-phone') as HTMLInputElement,
+      email: document.getElementById('l-email') as HTMLInputElement,
+      couple: document.getElementById('l-couple') as HTMLInputElement,
+      location: document.getElementById('l-location') as HTMLInputElement,
+      pkg: document.getElementById('l-pkg') as HTMLSelectElement,
+      notes: document.getElementById('l-notes') as HTMLTextAreaElement,
+    };
+
+    function openLead(ds) {
+      lf.date.value = ds;
+      if (dateLabel) dateLabel.textContent = prettyDate(ds);
+      ['name', 'phone', 'email', 'couple', 'location', 'notes'].forEach((k) => { lf[k].value = ''; });
+      lf.pkg.value = '';
+      modal?.showModal();
+    }
+
     if (root) {
-      const wa = root.dataset.whatsapp;
       let booked = new Set();
       const cal = createCalendar(root, {
         mode: 'public',
         dayState: (ds) => ({ booked: booked.has(ds) }),
-        onDay: (ds) => {
-          const [y, m, d] = ds.split('-');
-          const msg = `Salut! Vreau să verific disponibilitatea pentru ${d}.${m}.${y}. Aveți liber?`;
-          window.open(`${wa}?text=${encodeURIComponent(msg)}`, '_blank');
-        },
+        onDay: (ds) => openLead(ds),
       });
       async function load() { booked = new Set(await listBookedDates()); cal.refresh(); }
       load();
       subscribe(load);
     }
+
+    document.getElementById('l-cancel')?.addEventListener('click', () => modal?.close());
+    document.getElementById('leadForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const lead = {
+        date: lf.date.value, name: lf.name.value, phone: lf.phone.value, email: lf.email.value,
+        couple: lf.couple.value, location: lf.location.value, pkg: lf.pkg.value, notes: lf.notes.value,
+      };
+      try { await createLead(lead); } catch (err) { console.error('createLead', err); }
+      const [y, m, d] = lf.date.value.split('-');
+      let msg = `Salut! Sunt ${lf.name.value || ''}. Vreau să verific disponibilitatea pentru ${d}.${m}.${y}.`;
+      if (lf.pkg.value) msg += ` Pachet dorit: ${lf.pkg.value}.`;
+      if (lf.couple.value) msg += ` Miri: ${lf.couple.value}.`;
+      if (lf.location.value) msg += ` Locație: ${lf.location.value}.`;
+      if (lf.notes.value) msg += ` ${lf.notes.value}`;
+      modal?.close();
+      window.open(`${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+    });
   </script>
 </Base>

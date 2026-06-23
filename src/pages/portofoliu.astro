@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../consts';
+
+const reels = [
+  { cap: 'primul dans.', who: '@andra & vlad · mai 2026', ink: false },
+  { cap: 'lacrimile lui tata.', who: '@maria · iunie 2026', ink: true },
+  { cap: 'voalul.', who: '@ioana & andrei · iulie 2026', ink: false },
+  { cap: '„da”.', who: '@alina & tudor · sept 2026', ink: true },
+  { cap: 'aruncatul buchetului.', who: '@elena & radu · august 2026', ink: false },
+  { cap: 'ora 2 noaptea.', who: '@dana & mihai · sept 2026', ink: true },
+  { cap: 'pregătirile.', who: '@bianca & luca · oct 2026', ink: false },
+  { cap: 'tortul.', who: '@sorina & matei · oct 2026', ink: true },
+];
+---
+<Base
+  title={`Portofoliu — ${SITE.name}`}
+  description="Reels, stories și clipuri reale de la nunți, filmate de the bride feed — wedding content creator în București și pe o rază de ~200 km."
+>
+  <section class="section" style="padding-top: clamp(2.5rem, 6vw, 4rem);">
+    <div class="container">
+      <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>portofoliu</span>
+      <h1 class="h-lg">Momente reale, <em class="accent">postate live</em>.</h1>
+      <p class="lead mt-2">O selecție din reelsurile și clipurile filmate la nunți. Aici vor veni embed-urile reale de pe Instagram și TikTok — momentan, locul lor.</p>
+
+      <div class="portfolio-grid mt-3" role="list">
+        {reels.map((r) => (
+          <div role="listitem">
+            <div class={`reel${r.ink ? ' reel--ink' : ''}`}>
+              <div class="reel-cap" style={r.ink ? 'color: var(--ivory);' : ''}>{r.cap}</div>
+              <span class="reel-mark" style={r.ink ? 'color: var(--ivory);' : ''}><span class="live-dot" aria-hidden="true" style="width:.4em;height:.4em;"></span>the bride feed</span>
+            </div>
+            <span class="feed-cap">{r.who}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="cta-band">
+        <h2 class="h-md">Vrei și nunta ta în reels?</h2>
+        <p class="lead mt-2">Verifică ce date sunt libere și hai să vorbim despre ziua ta.</p>
+        <div class="hero-cta" style="justify-content: center; margin-top: 1.6rem;">
+          <a href="/disponibilitate/" class="btn btn-primary">Verifică disponibilitatea</a>
+          <a href="/#pachete" class="btn btn-ghost">Vezi pachetele</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

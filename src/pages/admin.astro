@@ -29,38 +29,71 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     </div>
   </div>
 
-  <section class="section" id="panel" hidden>
-    <div class="container">
-      <div class="admin-top">
-        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>admin · the bride feed</span>
-        {remote && <button id="logout" class="btn btn-ghost" style="font-size: .85rem;">Ieși din cont</button>}
-      </div>
-
-      <div class="admin-cal-wrap">
-        <div class="cal" id="cal"></div>
-        <div class="cal-legend" style="justify-content: center;">
-          <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
-          <span><i style="background: var(--blush);"></i>rezervat</span>
+  <section class="admin" id="panel" hidden>
+    <div class="admin-shell">
+      <header class="admin-bar">
+        <div class="admin-brand">
+          <span class="logo"><span class="live-dot" aria-hidden="true"></span>the bride feed</span>
+          <span class="admin-sub">panou de administrare</span>
         </div>
-        <p class="center" style="color: var(--muted); font-size: .85rem; margin-top: .8rem;">Click pe o zi pentru a bloca sau edita o nuntă.</p>
-      </div>
+        <div class="admin-bar-actions">
+          <span class={`admin-status ${remote ? 'is-live' : 'is-local'}`}>
+            <span class="live-dot" aria-hidden="true"></span>{remote ? 'live · sincronizat' : 'mod local · doar pe acest device'}
+          </span>
+          {remote && <button id="logout" class="btn btn-ghost admin-logout">Ieși din cont</button>}
+        </div>
+      </header>
 
-      <div class="dash">
-        <span class="eyebrow">dashboard</span>
-        <h2 class="h-md">Cifrele tale</h2>
+      <div class="admin-section">
+        <div class="admin-section-head">
+          <span class="eyebrow">privire de ansamblu</span>
+          <h2 class="h-md">Cifrele tale</h2>
+        </div>
         <div id="dash"></div>
       </div>
 
-      <div class="forecast">
-        <span class="eyebrow">forecast</span>
-        <h2 class="h-md">Ce să promovezi mai departe</h2>
-        <div class="forecast-list" id="forecast"></div>
+      <div class="admin-section">
+        <div class="admin-section-head">
+          <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>cereri noi</span>
+          <h2 class="h-md">Lead-uri din calendar</h2>
+        </div>
+        <div class="lead-list" id="leadlist"></div>
       </div>
 
-      <div class="dash">
-        <span class="eyebrow">rezervări</span>
-        <h2 class="h-md">Nunți rezervate</h2>
-        <div class="bk-list" id="bklist" style="max-width: 760px; margin-inline: auto;"></div>
+      <div class="admin-section">
+        <div class="admin-section-head">
+          <span class="eyebrow">crm</span>
+          <h2 class="h-md">Pipeline &amp; încasări</h2>
+        </div>
+        <div id="crmdash"></div>
+      </div>
+
+      <div class="admin-grid-2">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h3 class="admin-card-title">Calendar nunți</h3>
+            <span class="admin-card-hint">click pe o zi → blochezi / editezi</span>
+          </div>
+          <div class="cal" id="cal"></div>
+          <div class="cal-legend">
+            <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
+            <span><i style="background: var(--blush);"></i>rezervat</span>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h3 class="admin-card-title">Nunți rezervate</h3>
+          </div>
+          <div class="bk-list" id="bklist"></div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-head">
+          <span class="eyebrow">forecast</span>
+          <h2 class="h-md">Ce să promovezi mai departe</h2>
+        </div>
+        <div class="forecast-list" id="forecast"></div>
       </div>
     </div>
   </section>
@@ -101,6 +134,63 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     </form>
   </dialog>
 
+  <dialog class="modal modal--crm" id="crm">
+    <form class="modal-in" id="crmForm">
+      <div class="crm-head">
+        <div>
+          <h3 id="crm-name">Lead</h3>
+          <div class="crm-sub" id="crm-sub"></div>
+        </div>
+        <button type="button" class="crm-close" id="crm-cancel" aria-label="Închide">×</button>
+      </div>
+      <div class="crm-contact" id="crm-contact"></div>
+
+      <div class="field">
+        <label for="c-status">Status</label>
+        <select id="c-status">
+          <option value="neprelucrat">Neprelucrat</option>
+          <option value="contactat">Contactat</option>
+          <option value="oferta_trimisa">Ofertă trimisă</option>
+          <option value="castigat">Câștigat</option>
+          <option value="anulat">Anulat</option>
+        </select>
+      </div>
+
+      <span class="field-label">Progres</span>
+      <div class="crm-flags" id="crm-flags"></div>
+
+      <div class="crm-row">
+        <div class="field">
+          <label for="c-pkg">Pachet</label>
+          <select id="c-pkg">
+            <option value="">—</option>
+            {PACKAGES.map((p) => <option value={p.name}>{p.name}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-couple">Numele mirilor</label>
+          <input type="text" id="c-couple" placeholder="Ex. Andra & Vlad" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="c-location">Locația</label>
+        <input type="text" id="c-location" placeholder="Ex. Restaurant X, București" />
+      </div>
+      <div class="field">
+        <label for="c-notes">Observații</label>
+        <textarea id="c-notes" placeholder="Detalii, conversații, cerințe..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="bk-del" id="c-delete">Șterge</button>
+        <span style="display: flex; gap: .6rem; margin-left: auto; flex-wrap: wrap;">
+          <button type="button" class="btn btn-ghost" id="c-tocal">Adaugă în calendar</button>
+          <button type="submit" class="btn btn-primary">Salvează</button>
+        </span>
+      </div>
+    </form>
+  </dialog>
+
   <script>
     import { createCalendar, prettyDate } from '../lib/calendar.js';
     import { PACKAGES } from '../consts';
@@ -110,6 +200,41 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     const RO_MF = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
     const PRICE = Object.fromEntries(PACKAGES.map((p) => [p.name, p.price]));
     const lei = (n) => (n || 0).toLocaleString('ro-RO') + ' lei';
+
+    const LEAD_STATUSES = [
+      ['neprelucrat', 'Neprelucrat'],
+      ['contactat', 'Contactat'],
+      ['oferta_trimisa', 'Ofertă trimisă'],
+      ['castigat', 'Câștigat'],
+      ['anulat', 'Anulat'],
+    ];
+    const STATUS_LABEL = Object.fromEntries(LEAD_STATUSES);
+    const LEAD_FLAGS = [
+      ['data_confirmata', 'Dată confirmată'],
+      ['contract_semnat', 'Contract semnat'],
+      ['avans_incasat', 'Avans încasat'],
+      ['plata_integrala', 'Plată integrală'],
+      ['facturat', 'Facturat'],
+      ['livrat', 'Livrat'],
+      ['recenzie_primita', 'Recenzie primită'],
+    ];
+    const ICO = {
+      heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-6.5-4.2-9-8.2C1.4 9 2.6 5.5 6 5.5c2 0 3.2 1.4 4 2.6.8-1.2 2-2.6 4-2.6 3.4 0 4.6 3.5 3 6.3-2.5 4-9 8.2-9 8.2z"/></svg>',
+      cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>',
+      money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>',
+      trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-7"/><path d="M16 8h5v5"/></svg>',
+      star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.6 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
+      bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6.5 20v-6M12 20V8M17.5 20v-9"/></svg>',
+      eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+      chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-11.7 7.1L3 20.5l1.9-5.3A8 8 0 1 1 21 11.5z"/></svg>',
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6.1"/><path d="M21 20c0-2.7-1.7-4.4-4-4.9"/></svg>',
+      award: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M8.5 13.5 7 21l5-2.5L17 21l-1.5-7.5"/></svg>',
+      wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.1"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>',
+      receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+      truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11v9H3z"/><path d="M14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>',
+    };
+    const kpi = (k, v, ic, sub) => `<div class="kpi"><div class="kpi-ic">${ICO[ic] || ''}</div><div class="kpi-k">${k}</div><div class="kpi-v">${v}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ''}</div>`;
 
     const lock = document.getElementById('lock');
     const panel = document.getElementById('panel');
@@ -147,6 +272,7 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
 
     // ---- state ----
     const modal = document.getElementById('modal') as HTMLDialogElement;
+    const crm = document.getElementById('crm') as HTMLDialogElement;
     const mtitle = document.getElementById('mtitle');
     const delBtn = document.getElementById('f-delete');
     const f = {
@@ -159,8 +285,12 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     let cal: { refresh: () => void };
     let bookings = [];
     let events = [];
+    let leads = [];
+    let pendingLeadId = null;
+    let currentLead = null;
 
     function openModal(ds) {
+      pendingLeadId = null;
       const b = bookings.find((x) => x.date === ds);
       if (mtitle) mtitle.textContent = b ? 'Editează nunta' : 'Blochează data';
       f.date.value = ds;
@@ -189,6 +319,126 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       el.querySelectorAll('[data-edit]').forEach((x) =>
         x.addEventListener('click', () => openModal((x as HTMLElement).dataset.edit))
       );
+    }
+
+    function statusBadge(s) {
+      const k = s || 'neprelucrat';
+      return `<span class="lead-badge st-${k}">${STATUS_LABEL[k] || 'Neprelucrat'}</span>`;
+    }
+    function flagChips(l) {
+      const on = LEAD_FLAGS.filter(([k]) => l[k]).map(([, lab]) => `<span class="chip">✓ ${lab}</span>`);
+      return on.length ? `<div class="lead-chips">${on.join('')}</div>` : '';
+    }
+
+    function renderLeads() {
+      const el = document.getElementById('leadlist');
+      if (!el) return;
+      if (!leads.length) {
+        el.innerHTML = '<p class="bk-meta">Nicio cerere încă. Aici apar lead-urile trimise din calendarul public.</p>';
+        return;
+      }
+      el.innerHTML = leads
+        .map((l) => `<div class="lead-item" data-open="${l.id}" role="button" tabindex="0">
+            <div class="lead-main">
+              <div class="lead-top"><span class="bk-date">${l.date ? prettyDate(l.date) : 'fără dată'}</span>${statusBadge(l.status)}</div>
+              <div class="lead-name"><b>${l.name || '—'}</b>${l.couple ? ' · ' + l.couple : ''}</div>
+              <div class="lead-contact">${[l.phone, l.email].filter(Boolean).join(' · ') || 'fără contact'}</div>
+              <div class="bk-meta">${[l.pkg, l.location].filter(Boolean).join(' · ')}${l.notes ? '<br>' + l.notes : ''}</div>
+              ${flagChips(l)}
+            </div>
+            <span class="lead-open">Prelucrează →</span>
+          </div>`)
+        .join('');
+      el.querySelectorAll('[data-open]').forEach((x) => {
+        const id = (x as HTMLElement).dataset.open;
+        x.addEventListener('click', () => openCrm(id));
+        x.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCrm(id); } });
+      });
+    }
+
+    function openCrm(id) {
+      const l = leads.find((x) => x.id === id);
+      if (!l) return;
+      currentLead = l;
+      document.getElementById('crm-name').textContent = l.name || l.couple || 'Lead';
+      document.getElementById('crm-sub').textContent = l.date ? prettyDate(l.date) : 'fără dată';
+      const contact = [
+        l.phone ? `<a href="tel:${l.phone}">${l.phone}</a>` : '',
+        l.email ? `<a href="mailto:${l.email}">${l.email}</a>` : '',
+      ].filter(Boolean).join('<span class="crm-sep">·</span>') || 'fără contact';
+      document.getElementById('crm-contact').innerHTML = contact;
+      (document.getElementById('c-status') as HTMLSelectElement).value = l.status || 'neprelucrat';
+      (document.getElementById('c-pkg') as HTMLSelectElement).value = l.pkg || '';
+      (document.getElementById('c-couple') as HTMLInputElement).value = l.couple || '';
+      (document.getElementById('c-location') as HTMLInputElement).value = l.location || '';
+      (document.getElementById('c-notes') as HTMLTextAreaElement).value = l.notes || '';
+      document.getElementById('crm-flags').innerHTML = LEAD_FLAGS
+        .map(([k, lab]) => `<label class="crm-flag"><input type="checkbox" data-flag="${k}" ${l[k] ? 'checked' : ''} /><span>${lab}</span></label>`)
+        .join('');
+      crm.showModal();
+    }
+
+    function convertLead(id) {
+      const l = leads.find((x) => x.id === id);
+      if (!l) return;
+      pendingLeadId = id;
+      if (mtitle) mtitle.textContent = 'Adaugă în calendar';
+      f.date.value = l.date || '';
+      f.couple.value = l.couple || l.name || '';
+      f.location.value = l.location || '';
+      f.pkg.value = l.pkg || '';
+      f.notes.value = [l.notes, l.phone ? 'tel: ' + l.phone : '', l.email || ''].filter(Boolean).join(' · ');
+      if (delBtn) delBtn.style.display = 'none';
+      modal.showModal();
+    }
+
+    function renderCrmDashboard() {
+      const el = document.getElementById('crmdash');
+      if (!el) return;
+      const counts = {};
+      LEAD_STATUSES.forEach(([k]) => { counts[k] = 0; });
+      leads.forEach((l) => { const s = l.status || 'neprelucrat'; counts[s] = (counts[s] || 0) + 1; });
+      const active = leads.filter((l) => l.status !== 'anulat');
+      const won = leads.filter((l) => l.status === 'castigat');
+      const conv = active.length ? Math.round((won.length / active.length) * 100) : 0;
+      const fc = (k) => leads.filter((l) => l[k]).length;
+      const wonRevenue = won.reduce((s, l) => s + (PRICE[l.pkg] || 0), 0);
+      const collected = won.filter((l) => l.plata_integrala).reduce((s, l) => s + (PRICE[l.pkg] || 0), 0);
+      const toInvoice = won.filter((l) => !l.facturat).length;
+      const toDeliver = won.filter((l) => !l.livrat).length;
+
+      const cards = [
+        ['Lead-uri active', String(active.length), 'users'],
+        ['Câștigate', String(won.length), 'award', `${conv}% conversie`],
+        ['Avans încasat', String(fc('avans_incasat')), 'wallet'],
+        ['Plată integrală', String(fc('plata_integrala')), 'check'],
+        ['Facturate', String(fc('facturat')), 'receipt'],
+        ['Livrate', String(fc('livrat')), 'truck'],
+      ];
+      let html = '<div class="kpi-grid">' + cards.map((c) => kpi(...c)).join('') + '</div>';
+
+      const maxS = Math.max(1, ...LEAD_STATUSES.map(([k]) => counts[k]));
+      const pipe = LEAD_STATUSES
+        .map(([k, lab]) => `<div class="bar-row"><span class="lab">${lab}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round((counts[k] / maxS) * 100)}%"></div></div><span class="num">${counts[k]}</span></div>`)
+        .join('');
+
+      html += '<div class="dash-cols">'
+        + `<div class="dash-panel"><h3>Pipeline lead-uri</h3><div class="pipe">${leads.length ? pipe : '<p class="dash-empty">Niciun lead încă.</p>'}</div></div>`
+        + '<div class="dash-panel"><h3>Bani &amp; livrare</h3>'
+          + `<div class="kv"><span>Încasări estimate (câștigate)</span><span class="muted">${lei(wonRevenue)}</span></div>`
+          + `<div class="kv"><span>Încasat integral</span><span class="muted">${lei(collected)}</span></div>`
+          + `<div class="kv"><span>De facturat</span><span class="muted">${toInvoice}</span></div>`
+          + `<div class="kv"><span>De livrat</span><span class="muted">${toDeliver}</span></div>`
+        + '</div>'
+        + '</div>';
+      el.innerHTML = html;
+    }
+
+    async function refreshLeads() {
+      leads = await store.listLeads();
+      renderLeads();
+      renderCrmDashboard();
+      renderDashboard();
     }
 
     function eventCounts(type) {
@@ -221,26 +471,28 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       const topPkg = Object.entries(byPkg).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
       const maxC = Math.max(0, ...byMonth);
       const busiest = total ? RO_MF[byMonth.indexOf(maxC)] : '—';
-      const views = eventCounts('view'), leads = eventCounts('wa_click');
+      const views = eventCounts('view'), waLeads = eventCounts('wa_click');
       const ready = store.REMOTE;
 
-      const cards = [
-        ['Total nunți', String(total)],
-        [`Nunți ${curYear}`, String(byYear[curYear] || 0)],
-        ['Încasări estimate (total)', lei(revTotal)],
-        [`Încasări ${curYear}`, lei(revYear[curYear] || 0)],
-        ['Cel mai ales pachet', topPkg],
-        ['Cea mai aglomerată lună', busiest],
+      const bizCards = [
+        ['Total nunți', String(total), 'heart'],
+        [`Nunți ${curYear}`, String(byYear[curYear] || 0), 'cal'],
+        ['Încasări estimate', lei(revTotal), 'money', 'toate pachetele, toți anii'],
+        [`Încasări ${curYear}`, lei(revYear[curYear] || 0), 'trend'],
+        ['Pachet preferat', topPkg, 'star'],
+        ['Lună de vârf', busiest, 'bars'],
       ];
-      let html = '<div class="stat-grid">' + cards.map(([k, v]) => `<div class="stat-card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('') + '</div>';
+      let html = '<div class="kpi-grid">' + bizCards.map((c) => kpi(...c)).join('') + '</div>';
 
-      const note = ready ? '' : '<div class="stat-note">după conectarea bazei de date</div>';
-      html += '<div class="stat-grid" style="margin-top:.9rem;">'
-        + `<div class="stat-card"><div class="k">Vizite azi</div><div class="v">${ready ? views.day : '—'}</div>${note}</div>`
-        + `<div class="stat-card"><div class="k">Vizite luna asta</div><div class="v">${ready ? views.month : '—'}</div>${note}</div>`
-        + `<div class="stat-card"><div class="k">Vizite ${curYear}</div><div class="v">${ready ? views.year : '—'}</div>${note}</div>`
-        + `<div class="stat-card"><div class="k">Lead-uri WhatsApp</div><div class="v">${ready ? leads.all : '—'}</div>${note}</div>`
-        + '</div>';
+      const sub = ready ? '' : 'după conectarea bazei de date';
+      const trafCards = [
+        ['Vizite azi', ready ? String(views.day) : '—', 'eye', sub],
+        ['Vizite luna asta', ready ? String(views.month) : '—', 'eye', sub],
+        [`Vizite ${curYear}`, ready ? String(views.year) : '—', 'eye', sub],
+        ['Lead-uri primite', String(leads.length), 'chat', leads.length ? 'din calendarul public' : 'apar aici când vin cereri'],
+      ];
+      html += '<div class="admin-subhead"><span class="eyebrow">trafic &amp; lead-uri</span></div>';
+      html += '<div class="kpi-grid">' + trafCards.map((c) => kpi(...c)).join('') + '</div>';
 
       const monthBars = byMonth.map((c, i) => `<div class="bar-row"><span class="lab">${RO_M[i]}</span><div class="bar-track"><div class="bar-fill" style="width:${maxC ? Math.round(c / maxC * 100) : 0}%"></div></div><span class="num">${c}</span></div>`).join('');
       const years = Object.keys(byYear).sort();
@@ -254,7 +506,7 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         + '</div>';
 
       dash.innerHTML = html;
-      renderForecast({ total, byMonth, byYear, byPkg, topPkg, busiest, revYear, curYear, views, leads, ready });
+      renderForecast({ total, byMonth, byYear, byPkg, topPkg, busiest, revYear, curYear, views, leads: waLeads, ready });
     }
 
     function renderForecast(s) {
@@ -302,28 +554,67 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       if (!root) return;
       bookings = await store.listBookings();
       events = await store.getEvents();
+      leads = await store.listLeads();
       cal = createCalendar(root, {
         mode: 'admin',
         dayState: (ds) => ({ booked: bookings.some((b) => b.date === ds) }),
         onDay: (ds) => openModal(ds),
       });
       renderList();
+      renderLeads();
+      renderCrmDashboard();
       renderDashboard();
       store.subscribe(refresh);
+      store.subscribeLeads(refreshLeads);
     }
 
     document.getElementById('form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
         await store.upsertBooking({ date: f.date.value, couple: f.couple.value, location: f.location.value, pkg: f.pkg.value, notes: f.notes.value });
+        if (pendingLeadId) {
+          try { await store.updateLeadStatus(pendingLeadId, 'castigat'); } catch (e) { /* non-fatal */ }
+          pendingLeadId = null;
+        }
         modal.close();
         await refresh();
+        await refreshLeads();
       } catch (err) { alert('Eroare la salvare: ' + (err?.message || err)); }
     });
     document.getElementById('f-cancel')?.addEventListener('click', () => modal.close());
     delBtn?.addEventListener('click', async () => {
       try { await store.deleteBooking(f.date.value); modal.close(); await refresh(); }
       catch (err) { alert('Eroare la ștergere: ' + (err?.message || err)); }
+    });
+
+    // ---- CRM lead ----
+    document.getElementById('crmForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentLead) return;
+      const patch = {
+        status: (document.getElementById('c-status') as HTMLSelectElement).value,
+        pkg: (document.getElementById('c-pkg') as HTMLSelectElement).value || null,
+        couple: (document.getElementById('c-couple') as HTMLInputElement).value || null,
+        location: (document.getElementById('c-location') as HTMLInputElement).value || null,
+        notes: (document.getElementById('c-notes') as HTMLTextAreaElement).value || null,
+      };
+      document.querySelectorAll('#crm-flags input[data-flag]').forEach((inp) => {
+        patch[(inp as HTMLInputElement).dataset.flag] = (inp as HTMLInputElement).checked;
+      });
+      try { await store.updateLead(currentLead.id, patch); crm.close(); await refreshLeads(); }
+      catch (err) { alert('Eroare la salvare: ' + (err?.message || err)); }
+    });
+    document.getElementById('crm-cancel')?.addEventListener('click', () => crm.close());
+    document.getElementById('c-delete')?.addEventListener('click', async () => {
+      if (!currentLead) return;
+      try { await store.deleteLead(currentLead.id); crm.close(); await refreshLeads(); }
+      catch (err) { alert('Eroare la ștergere: ' + (err?.message || err)); }
+    });
+    document.getElementById('c-tocal')?.addEventListener('click', () => {
+      if (!currentLead) return;
+      const id = currentLead.id;
+      crm.close();
+      convertLead(id);
     });
   </script>
 </Base>

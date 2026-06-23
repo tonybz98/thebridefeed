@@ -4,7 +4,7 @@ export const SITE = {
   description:
     'Wedding content creator în București și împrejurimi — conținut real-time pentru nunți: reels, stories și clipuri spontane livrate chiar în ziua nunții.',
   url: 'https://thebridefeed.ro',
-  email: 'toniionut98@gmail.com',
+  email: 'contact@thebridefeed.ro',
   phone: '0751 022 832',
   whatsapp: 'https://wa.me/40751022832',
   instagram: 'https://instagram.com/thebridefeedro',
