@@ -1,0 +1,189 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE, PACKAGES } from '../consts';
+---
+<Base title="Admin — the bride feed" description="Panou intern.">
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+
+  <div class="lock" id="lock" data-pass={SITE.adminPass}>
+    <div class="lock-box">
+      <span class="eyebrow" style="justify-content: center;"><span class="live-dot" aria-hidden="true"></span>admin</span>
+      <h1 class="h-md">Panou intern</h1>
+      <p class="lead" style="margin-inline: auto;">Introdu codul de acces.</p>
+      <div class="field" style="margin-top: 1.2rem;"><input type="password" id="pass" placeholder="cod acces" autocomplete="current-password" /></div>
+      <button class="btn btn-primary" id="unlock" style="width: 100%; justify-content: center;">Intră</button>
+      <p id="lockerr" style="color: var(--coral-ink); font-size: .8rem; margin-top: .6rem; display: none;">Cod greșit.</p>
+    </div>
+  </div>
+
+  <section class="section" id="panel" hidden>
+    <div class="container">
+      <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>admin · calendar nunți</span>
+      <h1 class="h-lg">Disponibilitate</h1>
+      <p class="lead mt-2">Click pe o zi pentru a bloca sau edita o nuntă. Modificările se reflectă pe pagina publică de disponibilitate.</p>
+
+      <div class="admin-grid mt-3">
+        <div>
+          <div class="cal" id="cal"></div>
+          <div class="cal-legend">
+            <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
+            <span><i style="background: var(--blush);"></i>rezervat</span>
+          </div>
+        </div>
+        <div>
+          <h2 class="h-md">Nunți rezervate</h2>
+          <div class="bk-list" id="bklist"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <dialog class="modal" id="modal">
+    <form class="modal-in" id="form">
+      <h3 id="mtitle">Blochează data</h3>
+      <input type="hidden" id="f-id" />
+      <div class="field">
+        <label for="f-date">Data</label>
+        <input type="date" id="f-date" required />
+      </div>
+      <div class="field">
+        <label for="f-couple">Numele mirilor</label>
+        <input type="text" id="f-couple" placeholder="Ex. Andra & Vlad" />
+      </div>
+      <div class="field">
+        <label for="f-location">Locația</label>
+        <input type="text" id="f-location" placeholder="Ex. Restaurant X, București" />
+      </div>
+      <div class="field">
+        <label for="f-pkg">Pachetul ales</label>
+        <select id="f-pkg">
+          <option value="">—</option>
+          {PACKAGES.map((p) => <option value={p}>{p}</option>)}
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-notes">Observații</label>
+        <textarea id="f-notes" placeholder="Detalii, cerințe speciale, contact..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="bk-del" id="f-delete" style="display: none;">Șterge data</button>
+        <span style="display: flex; gap: .6rem; margin-left: auto;">
+          <button type="button" class="btn btn-ghost" id="f-cancel">Anulează</button>
+          <button type="submit" class="btn btn-primary">Salvează</button>
+        </span>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    import { createCalendar, prettyDate } from '../lib/calendar.js';
+    import { getBookings, addBooking, removeBooking, bookingForDate, onBookingsChange } from '../lib/store.js';
+
+    // ---- soft gate (NU e securitate reală; vezi README) ----
+    const lock = document.getElementById('lock');
+    const panel = document.getElementById('panel');
+    const PASS = lock?.dataset.pass || '';
+    let started = false;
+
+    function start() {
+      if (lock) lock.style.display = 'none';
+      if (panel) panel.hidden = false;
+      if (!started) { started = true; init(); }
+    }
+    function tryPass() {
+      const v = (document.getElementById('pass') as HTMLInputElement).value;
+      if (v === PASS) { sessionStorage.setItem('tbf_admin_ok', '1'); start(); }
+      else { const e = document.getElementById('lockerr'); if (e) e.style.display = 'block'; }
+    }
+    document.getElementById('unlock')?.addEventListener('click', tryPass);
+    document.getElementById('pass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPass(); });
+    if (sessionStorage.getItem('tbf_admin_ok') === '1') start();
+
+    // ---- calendar + bookings ----
+    const modal = document.getElementById('modal') as HTMLDialogElement;
+    const mtitle = document.getElementById('mtitle');
+    const delBtn = document.getElementById('f-delete');
+    const f = {
+      id: document.getElementById('f-id') as HTMLInputElement,
+      date: document.getElementById('f-date') as HTMLInputElement,
+      couple: document.getElementById('f-couple') as HTMLInputElement,
+      location: document.getElementById('f-location') as HTMLInputElement,
+      pkg: document.getElementById('f-pkg') as HTMLSelectElement,
+      notes: document.getElementById('f-notes') as HTMLTextAreaElement,
+    };
+    let cal: { refresh: () => void };
+    let bookings = [];
+
+    function openModal(ds) {
+      const b = bookingForDate(ds, bookings);
+      if (mtitle) mtitle.textContent = b ? 'Editează nunta' : 'Blochează data';
+      f.id.value = b?.id || '';
+      f.date.value = ds;
+      f.couple.value = b?.couple || '';
+      f.location.value = b?.location || '';
+      f.pkg.value = b?.pkg || '';
+      f.notes.value = b?.notes || '';
+      if (delBtn) delBtn.style.display = b ? 'inline-flex' : 'none';
+      modal.showModal();
+    }
+
+    function renderList() {
+      const el = document.getElementById('bklist');
+      if (!el) return;
+      const list = [...bookings].sort((a, b) => a.date.localeCompare(b.date));
+      if (!list.length) { el.innerHTML = '<p class="bk-meta">Nicio nuntă blocată încă.</p>'; return; }
+      el.innerHTML = list
+        .map(
+          (b) => `<div class="bk-item">
+            <div>
+              <span class="bk-date">${prettyDate(b.date)}</span>
+              <div><b>${b.couple || 'Fără nume'}</b></div>
+              <div class="bk-meta">${[b.pkg, b.location].filter(Boolean).join(' · ') || '—'}${b.notes ? '<br>' + b.notes : ''}</div>
+            </div>
+            <button class="bk-del" data-edit="${b.date}">Editează</button>
+          </div>`
+        )
+        .join('');
+      el.querySelectorAll('[data-edit]').forEach((x) =>
+        x.addEventListener('click', () => openModal((x as HTMLElement).dataset.edit))
+      );
+    }
+
+    function refresh() {
+      bookings = getBookings();
+      cal?.refresh();
+      renderList();
+    }
+
+    function init() {
+      const root = document.getElementById('cal');
+      if (!root) return;
+      bookings = getBookings();
+      cal = createCalendar(root, {
+        mode: 'admin',
+        dayState: (ds) => ({ booked: !!bookingForDate(ds, bookings) }),
+        onDay: (ds) => openModal(ds),
+      });
+      renderList();
+      onBookingsChange(refresh);
+    }
+
+    document.getElementById('form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      addBooking({
+        id: f.id.value || undefined,
+        date: f.date.value,
+        couple: f.couple.value,
+        location: f.location.value,
+        pkg: f.pkg.value,
+        notes: f.notes.value,
+      });
+      modal.close();
+      refresh();
+    });
+    document.getElementById('f-cancel')?.addEventListener('click', () => modal.close());
+    delBtn?.addEventListener('click', () => {
+      if (f.id.value) { removeBooking(f.id.value); modal.close(); refresh(); }
+    });
+  </script>
+</Base>

@@ -1,0 +1,39 @@
+---
+import Logo from './Logo.astro';
+import { SITE } from '../consts';
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <Logo reversed />
+        <p style="color: var(--on-ink-muted); max-width: 32ch; margin-top: 1rem; font-size: .95rem;">
+          Wedding content creator. Conținut real-time pentru ziua ta — reels, stories și clipuri, livrate cât emoția e încă proaspătă.
+        </p>
+      </div>
+      <div>
+        <h4>navigare</h4>
+        <div class="footer-links">
+          <a href="/#ce-primesti">Ce primești</a>
+          <a href="/#pachete">Pachete</a>
+          <a href="/#cum-functioneaza">Cum funcționează</a>
+          <a href="/blog/">Blog</a>
+        </div>
+      </div>
+      <div>
+        <h4>contact</h4>
+        <div class="footer-links">
+          <a href={SITE.instagram} rel="me">Instagram</a>
+          <a href={SITE.tiktok} rel="me">TikTok</a>
+          <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+          <a href="/#contact">Verifică disponibilitatea</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© {year} the bride feed</span>
+      <span>{SITE.city} · 200 km împrejur</span>
+    </div>
+  </div>
+</footer>

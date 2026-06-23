@@ -1,0 +1,32 @@
+---
+import Logo from './Logo.astro';
+---
+<header class="site-header">
+  <div class="container nav">
+    <Logo />
+    <button class="nav-toggle" aria-label="Deschide meniul" aria-expanded="false" aria-controls="nav-links">≡</button>
+    <nav class="nav-links" id="nav-links" aria-label="Navigare principală">
+      <a href="/#ce-primesti">Ce primești</a>
+      <a href="/#pachete">Pachete</a>
+      <a href="/disponibilitate/">Disponibilitate</a>
+      <a href="/blog/">Blog</a>
+      <a href="/disponibilitate/" class="btn btn-primary">Verifică disponibilitatea</a>
+    </nav>
+  </div>
+</header>
+<script is:inline>
+  const t = document.querySelector('.nav-toggle');
+  const l = document.getElementById('nav-links');
+  if (t && l) {
+    t.addEventListener('click', () => {
+      const open = l.classList.toggle('open');
+      t.setAttribute('aria-expanded', String(open));
+    });
+    l.querySelectorAll('a').forEach((a) =>
+      a.addEventListener('click', () => {
+        l.classList.remove('open');
+        t.setAttribute('aria-expanded', 'false');
+      })
+    );
+  }
+</script>

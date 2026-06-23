@@ -1,0 +1,7 @@
+---
+interface Props { reversed?: boolean; }
+const { reversed = false } = Astro.props;
+---
+<a class={`logo${reversed ? ' logo--rev' : ''}`} href="/" aria-label="the bride feed — acasă">
+  <span class="live-dot" aria-hidden="true"></span>the bride feed
+</a>
