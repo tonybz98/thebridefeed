@@ -216,18 +216,16 @@ const jsonLd = {
     </div>
   </section>
 
-  <!-- CONTACT / CTA -->
+  <!-- CONTACT -->
   <section class="section section--tight" id="contact">
-    <div class="container">
-      <div class="cta-band">
-        <span class="eyebrow" style="color: var(--ivory); justify-content: center;"><span class="live-dot" aria-hidden="true" style="background: var(--ivory); box-shadow: none; animation: none;"></span>disponibilitate</span>
-        <h2 class="h-lg">Ai dată stabilită?</h2>
-        <p class="lead">Spune-ne ziua nunții și îți zicem pe loc dacă suntem liberi.</p>
-        <div class="hero-cta" style="justify-content: center;">
-          <a href="/disponibilitate/" class="btn btn-primary">Verifică disponibilitatea</a>
-          <a href={SITE.whatsapp} class="btn btn-ghost">WhatsApp</a>
-        </div>
-        <p style="margin-top: 1rem; font-size: .85rem; color: rgba(255,255,255,.82);">sau scrie-ne la <a href={`mailto:${SITE.email}`} style="color:#fff; text-decoration: underline;">{SITE.email}</a></p>
+    <div class="container center">
+      <span class="eyebrow" style="justify-content: center;">contact</span>
+      <h2 class="h-md">Hai să vorbim despre nunta ta.</h2>
+      <p class="lead" style="margin-inline: auto;">Scrie-ne și îți răspundem repede.</p>
+      <div class="contact-row mt-2">
+        <a href={`mailto:${SITE.email}`} class="contact-pill">{SITE.email}</a>
+        <a href={`tel:${SITE.phone.replace(/\s/g, '')}`} class="contact-pill">{SITE.phone}</a>
+        <a href={SITE.whatsapp} class="contact-pill contact-pill--wa" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     </div>
   </section>

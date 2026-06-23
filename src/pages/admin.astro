@@ -1,39 +1,66 @@
 ---
 import Base from '../layouts/Base.astro';
 import { SITE, PACKAGES } from '../consts';
+const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
 ---
-<Base title="Admin — the bride feed" description="Panou intern.">
+<Base title="Admin — the bride feed" description="Panou intern." bare>
   <meta slot="head" name="robots" content="noindex, nofollow" />
 
   <div class="lock" id="lock" data-pass={SITE.adminPass}>
     <div class="lock-box">
       <span class="eyebrow" style="justify-content: center;"><span class="live-dot" aria-hidden="true"></span>admin</span>
       <h1 class="h-md">Panou intern</h1>
-      <p class="lead" style="margin-inline: auto;">Introdu codul de acces.</p>
-      <div class="field" style="margin-top: 1.2rem;"><input type="password" id="pass" placeholder="cod acces" autocomplete="current-password" /></div>
-      <button class="btn btn-primary" id="unlock" style="width: 100%; justify-content: center;">Intră</button>
-      <p id="lockerr" style="color: var(--coral-ink); font-size: .8rem; margin-top: .6rem; display: none;">Cod greșit.</p>
+      {remote ? (
+        <form id="login">
+          <p class="lead" style="margin-inline: auto;">Autentifică-te.</p>
+          <div class="field" style="margin-top: 1.2rem; text-align: left;"><label for="email">Email</label><input type="email" id="email" required autocomplete="username" /></div>
+          <div class="field" style="text-align: left;"><label for="pw">Parolă</label><input type="password" id="pw" required autocomplete="current-password" /></div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Intră</button>
+          <p id="lockerr" style="color: var(--coral-ink); font-size: .8rem; margin-top: .6rem; display: none;">Email sau parolă greșite.</p>
+        </form>
+      ) : (
+        <div>
+          <p class="lead" style="margin-inline: auto;">Introdu codul de acces.</p>
+          <div class="field" style="margin-top: 1.2rem;"><input type="password" id="pass" placeholder="cod acces" autocomplete="current-password" /></div>
+          <button class="btn btn-primary" id="unlock" style="width: 100%; justify-content: center;">Intră</button>
+          <p id="lockerr" style="color: var(--coral-ink); font-size: .8rem; margin-top: .6rem; display: none;">Cod greșit.</p>
+        </div>
+      )}
     </div>
   </div>
 
   <section class="section" id="panel" hidden>
     <div class="container">
-      <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>admin · calendar nunți</span>
-      <h1 class="h-lg">Disponibilitate</h1>
-      <p class="lead mt-2">Click pe o zi pentru a bloca sau edita o nuntă. Modificările se reflectă pe pagina publică de disponibilitate.</p>
+      <div class="admin-top">
+        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>admin · the bride feed</span>
+        {remote && <button id="logout" class="btn btn-ghost" style="font-size: .85rem;">Ieși din cont</button>}
+      </div>
 
-      <div class="admin-grid mt-3">
-        <div>
-          <div class="cal" id="cal"></div>
-          <div class="cal-legend">
-            <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
-            <span><i style="background: var(--blush);"></i>rezervat</span>
-          </div>
+      <div class="admin-cal-wrap">
+        <div class="cal" id="cal"></div>
+        <div class="cal-legend" style="justify-content: center;">
+          <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
+          <span><i style="background: var(--blush);"></i>rezervat</span>
         </div>
-        <div>
-          <h2 class="h-md">Nunți rezervate</h2>
-          <div class="bk-list" id="bklist"></div>
-        </div>
+        <p class="center" style="color: var(--muted); font-size: .85rem; margin-top: .8rem;">Click pe o zi pentru a bloca sau edita o nuntă.</p>
+      </div>
+
+      <div class="dash">
+        <span class="eyebrow">dashboard</span>
+        <h2 class="h-md">Cifrele tale</h2>
+        <div id="dash"></div>
+      </div>
+
+      <div class="forecast">
+        <span class="eyebrow">forecast</span>
+        <h2 class="h-md">Ce să promovezi mai departe</h2>
+        <div class="forecast-list" id="forecast"></div>
+      </div>
+
+      <div class="dash">
+        <span class="eyebrow">rezervări</span>
+        <h2 class="h-md">Nunți rezervate</h2>
+        <div class="bk-list" id="bklist" style="max-width: 760px; margin-inline: auto;"></div>
       </div>
     </div>
   </section>
@@ -41,7 +68,6 @@ import { SITE, PACKAGES } from '../consts';
   <dialog class="modal" id="modal">
     <form class="modal-in" id="form">
       <h3 id="mtitle">Blochează data</h3>
-      <input type="hidden" id="f-id" />
       <div class="field">
         <label for="f-date">Data</label>
         <input type="date" id="f-date" required />
@@ -58,7 +84,7 @@ import { SITE, PACKAGES } from '../consts';
         <label for="f-pkg">Pachetul ales</label>
         <select id="f-pkg">
           <option value="">—</option>
-          {PACKAGES.map((p) => <option value={p}>{p}</option>)}
+          {PACKAGES.map((p) => <option value={p.name}>{p.name}</option>)}
         </select>
       </div>
       <div class="field">
@@ -77,34 +103,53 @@ import { SITE, PACKAGES } from '../consts';
 
   <script>
     import { createCalendar, prettyDate } from '../lib/calendar.js';
-    import { getBookings, addBooking, removeBooking, bookingForDate, onBookingsChange } from '../lib/store.js';
+    import { PACKAGES } from '../consts';
+    import * as store from '../lib/store.js';
 
-    // ---- soft gate (NU e securitate reală; vezi README) ----
+    const RO_M = ['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul', 'aug', 'sep', 'oct', 'noi', 'dec'];
+    const RO_MF = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
+    const PRICE = Object.fromEntries(PACKAGES.map((p) => [p.name, p.price]));
+    const lei = (n) => (n || 0).toLocaleString('ro-RO') + ' lei';
+
     const lock = document.getElementById('lock');
     const panel = document.getElementById('panel');
-    const PASS = lock?.dataset.pass || '';
     let started = false;
 
-    function start() {
+    async function start() {
       if (lock) lock.style.display = 'none';
       if (panel) panel.hidden = false;
-      if (!started) { started = true; init(); }
+      if (!started) { started = true; await init(); }
     }
-    function tryPass() {
-      const v = (document.getElementById('pass') as HTMLInputElement).value;
-      if (v === PASS) { sessionStorage.setItem('tbf_admin_ok', '1'); start(); }
-      else { const e = document.getElementById('lockerr'); if (e) e.style.display = 'block'; }
-    }
-    document.getElementById('unlock')?.addEventListener('click', tryPass);
-    document.getElementById('pass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPass(); });
-    if (sessionStorage.getItem('tbf_admin_ok') === '1') start();
 
-    // ---- calendar + bookings ----
+    // ---- poartă de acces ----
+    if (store.REMOTE) {
+      document.getElementById('login')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (document.getElementById('email') as HTMLInputElement).value;
+        const pw = (document.getElementById('pw') as HTMLInputElement).value;
+        const { error } = await store.signIn(email, pw);
+        const err = document.getElementById('lockerr');
+        if (error) { if (err) err.style.display = 'block'; } else { await start(); }
+      });
+      document.getElementById('logout')?.addEventListener('click', async () => { await store.signOut(); location.reload(); });
+      (async () => { const u = await store.getUser(); if (u) await start(); })();
+    } else {
+      const PASS = lock?.dataset.pass || '';
+      const tryPass = async () => {
+        const v = (document.getElementById('pass') as HTMLInputElement).value;
+        if (v === PASS) { sessionStorage.setItem('tbf_admin_ok', '1'); await start(); }
+        else { const e = document.getElementById('lockerr'); if (e) e.style.display = 'block'; }
+      };
+      document.getElementById('unlock')?.addEventListener('click', tryPass);
+      document.getElementById('pass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPass(); });
+      if (sessionStorage.getItem('tbf_admin_ok') === '1') start();
+    }
+
+    // ---- state ----
     const modal = document.getElementById('modal') as HTMLDialogElement;
     const mtitle = document.getElementById('mtitle');
     const delBtn = document.getElementById('f-delete');
     const f = {
-      id: document.getElementById('f-id') as HTMLInputElement,
       date: document.getElementById('f-date') as HTMLInputElement,
       couple: document.getElementById('f-couple') as HTMLInputElement,
       location: document.getElementById('f-location') as HTMLInputElement,
@@ -113,11 +158,11 @@ import { SITE, PACKAGES } from '../consts';
     };
     let cal: { refresh: () => void };
     let bookings = [];
+    let events = [];
 
     function openModal(ds) {
-      const b = bookingForDate(ds, bookings);
+      const b = bookings.find((x) => x.date === ds);
       if (mtitle) mtitle.textContent = b ? 'Editează nunta' : 'Blochează data';
-      f.id.value = b?.id || '';
       f.date.value = ds;
       f.couple.value = b?.couple || '';
       f.location.value = b?.location || '';
@@ -130,60 +175,155 @@ import { SITE, PACKAGES } from '../consts';
     function renderList() {
       const el = document.getElementById('bklist');
       if (!el) return;
-      const list = [...bookings].sort((a, b) => a.date.localeCompare(b.date));
-      if (!list.length) { el.innerHTML = '<p class="bk-meta">Nicio nuntă blocată încă.</p>'; return; }
-      el.innerHTML = list
-        .map(
-          (b) => `<div class="bk-item">
+      if (!bookings.length) { el.innerHTML = '<p class="bk-meta">Nicio nuntă blocată încă.</p>'; return; }
+      el.innerHTML = bookings
+        .map((b) => `<div class="bk-item">
             <div>
               <span class="bk-date">${prettyDate(b.date)}</span>
               <div><b>${b.couple || 'Fără nume'}</b></div>
               <div class="bk-meta">${[b.pkg, b.location].filter(Boolean).join(' · ') || '—'}${b.notes ? '<br>' + b.notes : ''}</div>
             </div>
             <button class="bk-del" data-edit="${b.date}">Editează</button>
-          </div>`
-        )
+          </div>`)
         .join('');
       el.querySelectorAll('[data-edit]').forEach((x) =>
         x.addEventListener('click', () => openModal((x as HTMLElement).dataset.edit))
       );
     }
 
-    function refresh() {
-      bookings = getBookings();
-      cal?.refresh();
-      renderList();
+    function eventCounts(type) {
+      const now = new Date();
+      const td = now.toISOString().slice(0, 10);
+      const ym = td.slice(0, 7), yr = td.slice(0, 4);
+      let day = 0, month = 0, year = 0, all = 0;
+      for (const e of events) {
+        if (e.type !== type) continue;
+        const d = (e.created_at || '').slice(0, 10);
+        all++; if (d === td) day++; if (d.slice(0, 7) === ym) month++; if (d.slice(0, 4) === yr) year++;
+      }
+      return { day, month, year, all };
     }
 
-    function init() {
+    function renderDashboard() {
+      const dash = document.getElementById('dash');
+      if (!dash) return;
+      const curYear = new Date().getFullYear();
+      const total = bookings.length;
+      const byYear = {}, byMonth = Array(12).fill(0), byLoc = {}, byPkg = {};
+      let revTotal = 0; const revYear = {};
+      for (const b of bookings) {
+        const [y, m] = b.date.split('-').map(Number);
+        byYear[y] = (byYear[y] || 0) + 1; byMonth[m - 1]++;
+        if (b.location) byLoc[b.location] = (byLoc[b.location] || 0) + 1;
+        if (b.pkg) byPkg[b.pkg] = (byPkg[b.pkg] || 0) + 1;
+        const pr = PRICE[b.pkg] || 0; revTotal += pr; revYear[y] = (revYear[y] || 0) + pr;
+      }
+      const topPkg = Object.entries(byPkg).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+      const maxC = Math.max(0, ...byMonth);
+      const busiest = total ? RO_MF[byMonth.indexOf(maxC)] : '—';
+      const views = eventCounts('view'), leads = eventCounts('wa_click');
+      const ready = store.REMOTE;
+
+      const cards = [
+        ['Total nunți', String(total)],
+        [`Nunți ${curYear}`, String(byYear[curYear] || 0)],
+        ['Încasări estimate (total)', lei(revTotal)],
+        [`Încasări ${curYear}`, lei(revYear[curYear] || 0)],
+        ['Cel mai ales pachet', topPkg],
+        ['Cea mai aglomerată lună', busiest],
+      ];
+      let html = '<div class="stat-grid">' + cards.map(([k, v]) => `<div class="stat-card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('') + '</div>';
+
+      const note = ready ? '' : '<div class="stat-note">după conectarea bazei de date</div>';
+      html += '<div class="stat-grid" style="margin-top:.9rem;">'
+        + `<div class="stat-card"><div class="k">Vizite azi</div><div class="v">${ready ? views.day : '—'}</div>${note}</div>`
+        + `<div class="stat-card"><div class="k">Vizite luna asta</div><div class="v">${ready ? views.month : '—'}</div>${note}</div>`
+        + `<div class="stat-card"><div class="k">Vizite ${curYear}</div><div class="v">${ready ? views.year : '—'}</div>${note}</div>`
+        + `<div class="stat-card"><div class="k">Lead-uri WhatsApp</div><div class="v">${ready ? leads.all : '—'}</div>${note}</div>`
+        + '</div>';
+
+      const monthBars = byMonth.map((c, i) => `<div class="bar-row"><span class="lab">${RO_M[i]}</span><div class="bar-track"><div class="bar-fill" style="width:${maxC ? Math.round(c / maxC * 100) : 0}%"></div></div><span class="num">${c}</span></div>`).join('');
+      const years = Object.keys(byYear).sort();
+      const yearRows = years.length ? years.map((y) => `<div class="kv"><span>${y}</span><span class="muted">${byYear[y]} nunți · ${lei(revYear[y])}</span></div>`).join('') : '<p class="dash-empty">—</p>';
+      const locs = Object.entries(byLoc).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const locRows = locs.length ? locs.map(([l, c]) => `<div class="kv"><span>${l}</span><span class="muted">${c}</span></div>`).join('') : '<p class="dash-empty">Nicio locație înregistrată încă.</p>';
+
+      html += '<div class="dash-cols">'
+        + `<div class="dash-panel"><h3>Nunți pe lună (toți anii)</h3>${total ? monthBars : '<p class="dash-empty">Încă nicio nuntă.</p>'}</div>`
+        + `<div class="dash-panel"><h3>Pe an &amp; încasări</h3>${yearRows}<h3 style="margin-top:1.3rem;">Top locații</h3>${locRows}</div>`
+        + '</div>';
+
+      dash.innerHTML = html;
+      renderForecast({ total, byMonth, byYear, byPkg, topPkg, busiest, revYear, curYear, views, leads, ready });
+    }
+
+    function renderForecast(s) {
+      const el = document.getElementById('forecast');
+      if (!el) return;
+      const tips = [];
+      if (s.total === 0) {
+        tips.push('Încă nu ai nunți în calendar. Adaugă rezervările existente (sau câteva de test) ca să primești aici recomandări bazate pe cifrele tale reale.');
+      } else {
+        const order = s.byMonth.map((c, i) => ({ c, i })).sort((a, b) => a.c - b.c);
+        const slow = order.slice(0, 2).map((o) => RO_MF[o.i]);
+        tips.push(`Cele mai pline luni sunt în jurul lunii ${s.busiest}. Pune buget de promovare suplimentar pe lunile slabe (${slow.join(' și ')}) — acolo ai disponibilitate și cerere mică.`);
+        if (s.topPkg && s.topPkg !== '—') {
+          const others = PACKAGES.map((p) => p.name).filter((n) => n !== s.topPkg);
+          tips.push(`„${s.topPkg}" e pachetul cel mai ales — promovează-l ca „best seller", dar testează un upsell către ${others.join(' / ')} pentru un bilet mediu mai mare.`);
+        }
+        tips.push(`Încasări estimate în ${s.curYear}: ${lei(s.revYear[s.curYear] || 0)}. Ca să crești cifra, împinge în reclame pachetul superior și lunile cu loc liber.`);
+        if (s.ready) {
+          if (s.views.month > 0 && s.leads.month === 0) {
+            tips.push('Ai trafic pe site, dar 0 lead-uri WhatsApp luna asta — oferta/CTA nu convertește. Testează un mesaj mai clar și mută „Verifică disponibilitatea" mai sus.');
+          } else if (s.views.month > 0) {
+            const rate = Math.round((s.leads.month / s.views.month) * 100);
+            tips.push(`Conversie vizite→lead luna asta: ~${rate}%. Sub ~2% → lucrează la ofertă; peste ~5% → mărește bugetul de trafic, ai un site care vinde.`);
+          }
+          if (s.views.month > 0 && s.views.month < 100) {
+            tips.push('Trafic lunar mic — crește awareness-ul cu reclame Meta pe reels și colaborări cu locații, fotografi și wedding planneri.');
+          }
+        } else {
+          tips.push('Conectează baza de date ca să apară aici și vizitele pe site și lead-urile din WhatsApp — atunci forecast-ul devine complet (conversie, awareness etc.).');
+        }
+      }
+      el.innerHTML = tips.map((t) => `<div class="forecast-item">${t}</div>`).join('');
+    }
+
+    async function refresh() {
+      bookings = await store.listBookings();
+      events = await store.getEvents();
+      cal?.refresh();
+      renderList();
+      renderDashboard();
+    }
+
+    async function init() {
       const root = document.getElementById('cal');
       if (!root) return;
-      bookings = getBookings();
+      bookings = await store.listBookings();
+      events = await store.getEvents();
       cal = createCalendar(root, {
         mode: 'admin',
-        dayState: (ds) => ({ booked: !!bookingForDate(ds, bookings) }),
+        dayState: (ds) => ({ booked: bookings.some((b) => b.date === ds) }),
         onDay: (ds) => openModal(ds),
       });
       renderList();
-      onBookingsChange(refresh);
+      renderDashboard();
+      store.subscribe(refresh);
     }
 
-    document.getElementById('form')?.addEventListener('submit', (e) => {
+    document.getElementById('form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      addBooking({
-        id: f.id.value || undefined,
-        date: f.date.value,
-        couple: f.couple.value,
-        location: f.location.value,
-        pkg: f.pkg.value,
-        notes: f.notes.value,
-      });
-      modal.close();
-      refresh();
+      try {
+        await store.upsertBooking({ date: f.date.value, couple: f.couple.value, location: f.location.value, pkg: f.pkg.value, notes: f.notes.value });
+        modal.close();
+        await refresh();
+      } catch (err) { alert('Eroare la salvare: ' + (err?.message || err)); }
     });
     document.getElementById('f-cancel')?.addEventListener('click', () => modal.close());
-    delBtn?.addEventListener('click', () => {
-      if (f.id.value) { removeBooking(f.id.value); modal.close(); refresh(); }
+    delBtn?.addEventListener('click', async () => {
+      try { await store.deleteBooking(f.date.value); modal.close(); await refresh(); }
+      catch (err) { alert('Eroare la ștergere: ' + (err?.message || err)); }
     });
   </script>
 </Base>

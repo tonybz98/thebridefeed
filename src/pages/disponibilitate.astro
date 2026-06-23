@@ -71,22 +71,24 @@ import { SITE } from '../consts';
 
   <script>
     import { createCalendar } from '../lib/calendar.js';
-    import { getBookings, bookingForDate, onBookingsChange } from '../lib/store.js';
+    import { listBookedDates, subscribe } from '../lib/store.js';
 
     const root = document.getElementById('cal');
     if (root) {
       const wa = root.dataset.whatsapp;
-      let bookings = getBookings();
+      let booked = new Set();
       const cal = createCalendar(root, {
         mode: 'public',
-        dayState: (ds) => ({ booked: !!bookingForDate(ds, bookings) }),
+        dayState: (ds) => ({ booked: booked.has(ds) }),
         onDay: (ds) => {
           const [y, m, d] = ds.split('-');
           const msg = `Salut! Vreau să verific disponibilitatea pentru ${d}.${m}.${y}. Aveți liber?`;
           window.open(`${wa}?text=${encodeURIComponent(msg)}`, '_blank');
         },
       });
-      onBookingsChange(() => { bookings = getBookings(); cal.refresh(); });
+      async function load() { booked = new Set(await listBookedDates()); cal.refresh(); }
+      load();
+      subscribe(load);
     }
   </script>
 </Base>

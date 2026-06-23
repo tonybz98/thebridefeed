@@ -4,16 +4,21 @@ export const SITE = {
   description:
     'Wedding content creator în București și împrejurimi — conținut real-time pentru nunți: reels, stories și clipuri spontane livrate chiar în ziua nunții.',
   url: 'https://thebridefeed.ro',
-  email: 'hello@thebridefeed.ro',
-  phone: '+40 7XX XXX XXX',
+  email: 'contact@thebridefeed.com',
+  phone: '0751 xxx xxx',
   whatsapp: 'https://wa.me/407XXXXXXXX',
   instagram: 'https://instagram.com/thebridefeed',
   tiktok: 'https://www.tiktok.com/@thebridefeed',
   city: 'București',
   region: 'București – Ilfov',
   radiusKm: 200,
-  // Soft gate pentru /admin (NU e securitate reală — vezi README). Schimbă-l.
+  // Folosit DOAR pentru poarta locală a /admin când Supabase nu e conectat. Schimbă-l.
   adminPass: 'mireasa2026',
 };
 
-export const PACKAGES = ['Stories', 'Full Day', 'Full + Edit'];
+// Pachetele și prețul de pornire (folosit în /admin pentru estimarea încasărilor)
+export const PACKAGES = [
+  { name: 'Stories', price: 600 },
+  { name: 'Full Day', price: 1500 },
+  { name: 'Full + Edit', price: 2500 },
+];

@@ -27,7 +27,7 @@ const year = new Date().getFullYear();
           <a href={SITE.instagram} rel="me">Instagram</a>
           <a href={SITE.tiktok} rel="me">TikTok</a>
           <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-          <a href="/#contact">Verifică disponibilitatea</a>
+          <a href={`tel:${SITE.phone.replace(/\s/g, '')}`}>{SITE.phone}</a>
         </div>
       </div>
     </div>

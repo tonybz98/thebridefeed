@@ -103,3 +103,19 @@ Pentru ca datele blocate să fie vizibile tuturor (și live), conectează un bac
 3. Activezi Realtime → calendarul public se actualizează singur, fără refresh.
 
 Butonul flotant de WhatsApp folosește numărul din `src/consts.ts` (`whatsapp`).
+
+## Setup Supabase (calendar live pentru toți) — pas cu pas
+
+1. **Creează proiect** pe supabase.com (gratuit).
+2. **Rulează schema:** Supabase → *SQL Editor* → *New query* → lipește tot din `supabase/schema.sql` → *Run*.
+3. **Creează adminul:** Supabase → *Authentication* → *Users* → *Add user* → pune email + parolă și bifează *Auto Confirm User*. Cu acest email/parolă te loghezi pe `/admin`.
+4. **Ia cheile:** Supabase → *Project Settings* → *API* → copiază `Project URL` și cheia `anon public`.
+5. **Pune-le pe Vercel:** Vercel → proiect → *Settings* → *Environment Variables* → adaugă:
+   - `PUBLIC_SUPABASE_URL` = Project URL
+   - `PUBLIC_SUPABASE_ANON_KEY` = cheia anon public
+   Apoi *Deployments* → ultimul deploy → *Redeploy* (variabilele se aplică la build).
+6. Gata: `/admin` cere acum login, iar ce blochezi apare instant pe `/disponibilitate` pentru oricine.
+
+Pentru dev local: copiază `.env.example` ca `.env` și pune aceleași valori.
+
+Notă securitate: cheia `anon` e publică prin design — accesul e controlat de RLS (vezi `schema.sql`). Datele personale ale mirilor stau în tabelul `bookings` (doar admin autentificat); publicul vede doar tabelul `availability_dates` (doar datele ocupate).

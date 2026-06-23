@@ -10,8 +10,9 @@ interface Props {
   description: string;
   image?: string;
   type?: string;
+  bare?: boolean;
 }
-const { title, description, image, type } = Astro.props;
+const { title, description, image, type, bare = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="ro">
@@ -20,10 +21,21 @@ const { title, description, image, type } = Astro.props;
     <slot name="head" />
   </head>
   <body>
-    <a class="skip-link" href="#main">Sari la conținut</a>
-    <Header />
+    {!bare && <a class="skip-link" href="#main">Sari la conținut</a>}
+    {!bare && <Header />}
     <main id="main"><slot /></main>
-    <Footer />
-    <WhatsappFab />
+    {!bare && <Footer />}
+    {!bare && <WhatsappFab />}
+    {!bare && (
+      <script>
+        import { logEvent } from '../lib/store.js';
+        if (!location.pathname.startsWith('/admin')) logEvent('view', location.pathname);
+        document.addEventListener('click', (e) => {
+          const t = e.target;
+          const a = t && t.closest ? t.closest('a[href*="wa.me"]') : null;
+          if (a) logEvent('wa_click', location.pathname);
+        });
+      </script>
+    )}
   </body>
 </html>
