@@ -45,17 +45,15 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       </header>
 
       <div class="admin-section">
-        <div class="admin-section-head">
-          <span class="eyebrow">privire de ansamblu</span>
-          <h2 class="h-md">Cifrele tale</h2>
-        </div>
-        <div id="dash"></div>
-      </div>
-
-      <div class="admin-section">
-        <div class="admin-section-head">
-          <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>cereri noi</span>
-          <h2 class="h-md">Lead-uri din calendar</h2>
+        <div class="admin-section-head admin-section-head--row">
+          <div>
+            <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>cereri noi</span>
+            <h2 class="h-md">Lead-uri din calendar</h2>
+          </div>
+          <div class="export-actions">
+            <button type="button" class="btn btn-ghost" id="exp-csv">Export CSV</button>
+            <button type="button" class="btn btn-ghost" id="exp-xls">Export Excel</button>
+          </div>
         </div>
         <div class="lead-list" id="leadlist"></div>
       </div>
@@ -88,13 +86,6 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         </div>
       </div>
 
-      <div class="admin-section">
-        <div class="admin-section-head">
-          <span class="eyebrow">forecast</span>
-          <h2 class="h-md">Ce să promovezi mai departe</h2>
-        </div>
-        <div class="forecast-list" id="forecast"></div>
-      </div>
     </div>
   </section>
 
@@ -196,8 +187,6 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     import { PACKAGES } from '../consts';
     import * as store from '../lib/store.js';
 
-    const RO_M = ['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul', 'aug', 'sep', 'oct', 'noi', 'dec'];
-    const RO_MF = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
     const PRICE = Object.fromEntries(PACKAGES.map((p) => [p.name, p.price]));
     const lei = (n) => (n || 0).toLocaleString('ro-RO') + ' lei';
 
@@ -284,7 +273,6 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     };
     let cal: { refresh: () => void };
     let bookings = [];
-    let events = [];
     let leads = [];
     let pendingLeadId = null;
     let currentLead = null;
@@ -403,16 +391,17 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       const conv = active.length ? Math.round((won.length / active.length) * 100) : 0;
       const fc = (k) => leads.filter((l) => l[k]).length;
       const wonRevenue = won.reduce((s, l) => s + (PRICE[l.pkg] || 0), 0);
-      const collected = won.filter((l) => l.plata_integrala).reduce((s, l) => s + (PRICE[l.pkg] || 0), 0);
+      const invoicedTotal = leads.filter((l) => l.facturat).reduce((s, l) => s + (PRICE[l.pkg] || 0), 0);
+      const collected = leads.filter((l) => l.plata_integrala).reduce((s, l) => s + (PRICE[l.pkg] || 0), 0);
       const toInvoice = won.filter((l) => !l.facturat).length;
       const toDeliver = won.filter((l) => !l.livrat).length;
 
       const cards = [
         ['Lead-uri active', String(active.length), 'users'],
         ['Câștigate', String(won.length), 'award', `${conv}% conversie`],
-        ['Avans încasat', String(fc('avans_incasat')), 'wallet'],
-        ['Plată integrală', String(fc('plata_integrala')), 'check'],
-        ['Facturate', String(fc('facturat')), 'receipt'],
+        ['Total facturat', lei(invoicedTotal), 'receipt', `${fc('facturat')} lead-uri`],
+        ['Total încasat', lei(collected), 'wallet', `${fc('plata_integrala')} plătite integral`],
+        ['Avans încasat', String(fc('avans_incasat')), 'check'],
         ['Livrate', String(fc('livrat')), 'truck'],
       ];
       let html = '<div class="kpi-grid">' + cards.map((c) => kpi(...c)).join('') + '</div>';
@@ -422,13 +411,14 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         .map(([k, lab]) => `<div class="bar-row"><span class="lab">${lab}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round((counts[k] / maxS) * 100)}%"></div></div><span class="num">${counts[k]}</span></div>`)
         .join('');
 
+      const nunti = (n) => `${n} ${n === 1 ? 'nuntă' : 'nunți'}`;
       html += '<div class="dash-cols">'
         + `<div class="dash-panel"><h3>Pipeline lead-uri</h3><div class="pipe">${leads.length ? pipe : '<p class="dash-empty">Niciun lead încă.</p>'}</div></div>`
-        + '<div class="dash-panel"><h3>Bani &amp; livrare</h3>'
+        + '<div class="dash-panel"><h3>De făcut</h3>'
           + `<div class="kv"><span>Încasări estimate (câștigate)</span><span class="muted">${lei(wonRevenue)}</span></div>`
-          + `<div class="kv"><span>Încasat integral</span><span class="muted">${lei(collected)}</span></div>`
-          + `<div class="kv"><span>De facturat</span><span class="muted">${toInvoice}</span></div>`
-          + `<div class="kv"><span>De livrat</span><span class="muted">${toDeliver}</span></div>`
+          + `<div class="kv"><span>De facturat</span><span class="muted">${nunti(toInvoice)}</span></div>`
+          + `<div class="kv"><span>De livrat</span><span class="muted">${nunti(toDeliver)}</span></div>`
+          + `<div class="kv"><span>Plătite integral</span><span class="muted">${fc('plata_integrala')}</span></div>`
         + '</div>'
         + '</div>';
       el.innerHTML = html;
@@ -438,122 +428,52 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       leads = await store.listLeads();
       renderLeads();
       renderCrmDashboard();
-      renderDashboard();
     }
 
-    function eventCounts(type) {
-      const now = new Date();
-      const td = now.toISOString().slice(0, 10);
-      const ym = td.slice(0, 7), yr = td.slice(0, 4);
-      let day = 0, month = 0, year = 0, all = 0;
-      for (const e of events) {
-        if (e.type !== type) continue;
-        const d = (e.created_at || '').slice(0, 10);
-        all++; if (d === td) day++; if (d.slice(0, 7) === ym) month++; if (d.slice(0, 4) === yr) year++;
-      }
-      return { day, month, year, all };
+    // ---- export bază de date lead-uri ----
+    function exportRows() {
+      const head = ['Data', 'Nume', 'Telefon', 'Email', 'Miri', 'Locație', 'Pachet', 'Status', ...LEAD_FLAGS.map(([, lab]) => lab), 'Observații', 'Creat'];
+      const rows = leads.map((l) => [
+        l.date || '', l.name || '', l.phone || '', l.email || '', l.couple || '', l.location || '', l.pkg || '',
+        STATUS_LABEL[l.status] || l.status || '',
+        ...LEAD_FLAGS.map(([k]) => (l[k] ? 'Da' : 'Nu')),
+        (l.notes || '').replace(/[\r\n]+/g, ' '),
+        (l.created_at || '').slice(0, 10),
+      ]);
+      return { head, rows };
     }
-
-    function renderDashboard() {
-      const dash = document.getElementById('dash');
-      if (!dash) return;
-      const curYear = new Date().getFullYear();
-      const total = bookings.length;
-      const byYear = {}, byMonth = Array(12).fill(0), byLoc = {}, byPkg = {};
-      let revTotal = 0; const revYear = {};
-      for (const b of bookings) {
-        const [y, m] = b.date.split('-').map(Number);
-        byYear[y] = (byYear[y] || 0) + 1; byMonth[m - 1]++;
-        if (b.location) byLoc[b.location] = (byLoc[b.location] || 0) + 1;
-        if (b.pkg) byPkg[b.pkg] = (byPkg[b.pkg] || 0) + 1;
-        const pr = PRICE[b.pkg] || 0; revTotal += pr; revYear[y] = (revYear[y] || 0) + pr;
-      }
-      const topPkg = Object.entries(byPkg).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
-      const maxC = Math.max(0, ...byMonth);
-      const busiest = total ? RO_MF[byMonth.indexOf(maxC)] : '—';
-      const views = eventCounts('view'), waLeads = eventCounts('wa_click');
-      const ready = store.REMOTE;
-
-      const bizCards = [
-        ['Total nunți', String(total), 'heart'],
-        [`Nunți ${curYear}`, String(byYear[curYear] || 0), 'cal'],
-        ['Încasări estimate', lei(revTotal), 'money', 'toate pachetele, toți anii'],
-        [`Încasări ${curYear}`, lei(revYear[curYear] || 0), 'trend'],
-        ['Pachet preferat', topPkg, 'star'],
-        ['Lună de vârf', busiest, 'bars'],
-      ];
-      let html = '<div class="kpi-grid">' + bizCards.map((c) => kpi(...c)).join('') + '</div>';
-
-      const sub = ready ? '' : 'după conectarea bazei de date';
-      const trafCards = [
-        ['Vizite azi', ready ? String(views.day) : '—', 'eye', sub],
-        ['Vizite luna asta', ready ? String(views.month) : '—', 'eye', sub],
-        [`Vizite ${curYear}`, ready ? String(views.year) : '—', 'eye', sub],
-        ['Lead-uri primite', String(leads.length), 'chat', leads.length ? 'din calendarul public' : 'apar aici când vin cereri'],
-      ];
-      html += '<div class="admin-subhead"><span class="eyebrow">trafic &amp; lead-uri</span></div>';
-      html += '<div class="kpi-grid">' + trafCards.map((c) => kpi(...c)).join('') + '</div>';
-
-      const monthBars = byMonth.map((c, i) => `<div class="bar-row"><span class="lab">${RO_M[i]}</span><div class="bar-track"><div class="bar-fill" style="width:${maxC ? Math.round(c / maxC * 100) : 0}%"></div></div><span class="num">${c}</span></div>`).join('');
-      const years = Object.keys(byYear).sort();
-      const yearRows = years.length ? years.map((y) => `<div class="kv"><span>${y}</span><span class="muted">${byYear[y]} nunți · ${lei(revYear[y])}</span></div>`).join('') : '<p class="dash-empty">—</p>';
-      const locs = Object.entries(byLoc).sort((a, b) => b[1] - a[1]).slice(0, 6);
-      const locRows = locs.length ? locs.map(([l, c]) => `<div class="kv"><span>${l}</span><span class="muted">${c}</span></div>`).join('') : '<p class="dash-empty">Nicio locație înregistrată încă.</p>';
-
-      html += '<div class="dash-cols">'
-        + `<div class="dash-panel"><h3>Nunți pe lună (toți anii)</h3>${total ? monthBars : '<p class="dash-empty">Încă nicio nuntă.</p>'}</div>`
-        + `<div class="dash-panel"><h3>Pe an &amp; încasări</h3>${yearRows}<h3 style="margin-top:1.3rem;">Top locații</h3>${locRows}</div>`
-        + '</div>';
-
-      dash.innerHTML = html;
-      renderForecast({ total, byMonth, byYear, byPkg, topPkg, busiest, revYear, curYear, views, leads: waLeads, ready });
+    function downloadFile(name, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
     }
-
-    function renderForecast(s) {
-      const el = document.getElementById('forecast');
-      if (!el) return;
-      const tips = [];
-      if (s.total === 0) {
-        tips.push('Încă nu ai nunți în calendar. Adaugă rezervările existente (sau câteva de test) ca să primești aici recomandări bazate pe cifrele tale reale.');
-      } else {
-        const order = s.byMonth.map((c, i) => ({ c, i })).sort((a, b) => a.c - b.c);
-        const slow = order.slice(0, 2).map((o) => RO_MF[o.i]);
-        tips.push(`Cele mai pline luni sunt în jurul lunii ${s.busiest}. Pune buget de promovare suplimentar pe lunile slabe (${slow.join(' și ')}) — acolo ai disponibilitate și cerere mică.`);
-        if (s.topPkg && s.topPkg !== '—') {
-          const others = PACKAGES.map((p) => p.name).filter((n) => n !== s.topPkg);
-          tips.push(`„${s.topPkg}" e pachetul cel mai ales — promovează-l ca „best seller", dar testează un upsell către ${others.join(' / ')} pentru un bilet mediu mai mare.`);
-        }
-        tips.push(`Încasări estimate în ${s.curYear}: ${lei(s.revYear[s.curYear] || 0)}. Ca să crești cifra, împinge în reclame pachetul superior și lunile cu loc liber.`);
-        if (s.ready) {
-          if (s.views.month > 0 && s.leads.month === 0) {
-            tips.push('Ai trafic pe site, dar 0 lead-uri WhatsApp luna asta — oferta/CTA nu convertește. Testează un mesaj mai clar și mută „Verifică disponibilitatea" mai sus.');
-          } else if (s.views.month > 0) {
-            const rate = Math.round((s.leads.month / s.views.month) * 100);
-            tips.push(`Conversie vizite→lead luna asta: ~${rate}%. Sub ~2% → lucrează la ofertă; peste ~5% → mărește bugetul de trafic, ai un site care vinde.`);
-          }
-          if (s.views.month > 0 && s.views.month < 100) {
-            tips.push('Trafic lunar mic — crește awareness-ul cu reclame Meta pe reels și colaborări cu locații, fotografi și wedding planneri.');
-          }
-        } else {
-          tips.push('Conectează baza de date ca să apară aici și vizitele pe site și lead-urile din WhatsApp — atunci forecast-ul devine complet (conversie, awareness etc.).');
-        }
-      }
-      el.innerHTML = tips.map((t) => `<div class="forecast-item">${t}</div>`).join('');
+    function exportCSV() {
+      const { head, rows } = exportRows();
+      const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+      const csv = [head, ...rows].map((r) => r.map(esc).join(',')).join('\r\n');
+      downloadFile('lead-uri-thebridefeed.csv', '﻿' + csv, 'text/csv;charset=utf-8;');
+    }
+    function exportXLS() {
+      const { head, rows } = exportRows();
+      const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const thead = '<tr>' + head.map((h) => `<th>${esc(h)}</th>`).join('') + '</tr>';
+      const tbody = rows.map((r) => '<tr>' + r.map((c) => `<td>${esc(c)}</td>`).join('') + '</tr>').join('');
+      const sheet = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1">${thead}${tbody}</table></body></html>`;
+      downloadFile('lead-uri-thebridefeed.xls', sheet, 'application/vnd.ms-excel');
     }
 
     async function refresh() {
       bookings = await store.listBookings();
-      events = await store.getEvents();
       cal?.refresh();
       renderList();
-      renderDashboard();
     }
 
     async function init() {
       const root = document.getElementById('cal');
       if (!root) return;
       bookings = await store.listBookings();
-      events = await store.getEvents();
       leads = await store.listLeads();
       cal = createCalendar(root, {
         mode: 'admin',
@@ -563,7 +483,6 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       renderList();
       renderLeads();
       renderCrmDashboard();
-      renderDashboard();
       store.subscribe(refresh);
       store.subscribeLeads(refreshLeads);
     }
@@ -616,5 +535,8 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       crm.close();
       convertLead(id);
     });
+
+    document.getElementById('exp-csv')?.addEventListener('click', exportCSV);
+    document.getElementById('exp-xls')?.addEventListener('click', exportXLS);
   </script>
 </Base>

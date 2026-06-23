@@ -31,18 +31,18 @@ const waPath = 'M19.05 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91c
   <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
 
   <!-- HERO -->
-  <section class="section" style="padding-top: clamp(2.5rem, 6vw, 4.5rem);">
+  <section class="section hero-section" style="padding-top: clamp(2.5rem, 6vw, 4.5rem);">
     <div class="container hero">
-      <div>
+      <div class="hero-copy">
         <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>live · real-time wedding content</span>
         <h1 class="h-xl">Nunta ta,<br />postată <em class="accent">chiar azi</em>.</h1>
         <p class="lead mt-2">
-          Suntem content creatorul care stă lângă tine toată ziua și transformă momentele reale în reels, stories
-          și clipuri — gata de postat înainte să se termine petrecerea.
+          Stăm lângă tine toată ziua și transformăm momentele reale în reels, stories și clipuri —
+          gata de postat înainte să se termine petrecerea.
         </p>
         <div class="hero-cta">
           <a href="/disponibilitate/" class="btn btn-primary">Verifică disponibilitatea</a>
-          <a href="#reels" class="btn btn-ghost">Vezi reels</a>
+          <a href="/portofoliu/" class="btn btn-ghost">Vezi portofoliul</a>
         </div>
         <div class="hero-stats">
           <div class="stat"><b>same-day</b><span>livrare în ziua nunții</span></div>
@@ -50,12 +50,16 @@ const waPath = 'M19.05 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91c
           <div class="stat"><b>live</b><span>stories în direct</span></div>
         </div>
       </div>
-      <div>
-        <div class="reel hero-media">
-          <div class="reel-bars"><i></i><i></i><i></i></div>
-          <span class="reel-live"><span class="live-dot" aria-hidden="true" style="width:.5em;height:.5em;"></span>live · azi 14:32</span>
-          <div class="reel-cap">clipa dinainte<br />de „da”.</div>
-          <span class="reel-mark"><span class="live-dot" aria-hidden="true" style="width:.45em;height:.45em;"></span>the bride feed</span>
+      <div class="hero-visual">
+        <div class="hero-phone">
+          <div class="reel hero-screen">
+            <div class="reel-bars"><i></i><i></i><i></i></div>
+            <span class="reel-live"><span class="live-dot" aria-hidden="true" style="width:.5em;height:.5em;"></span>live · azi 14:32</span>
+            <div class="reel-cap">clipa dinainte<br />de „da”.</div>
+            <span class="reel-mark"><span class="live-dot" aria-hidden="true" style="width:.45em;height:.45em;"></span>the bride feed</span>
+          </div>
+          <span class="hero-chip hero-chip--tl"><span class="live-dot" aria-hidden="true" style="width:.5em;height:.5em;"></span>filmăm acum</span>
+          <span class="hero-chip hero-chip--br">livrat same-day</span>
         </div>
       </div>
     </div>
