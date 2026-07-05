@@ -13,7 +13,7 @@ export const SITE = {
   region: 'București – Ilfov',
   radiusKm: 200,
   // Folosit DOAR pentru poarta locală a /admin când Supabase nu e conectat. Schimbă-l.
-  adminPass: 'TBF2026!',
+  adminPass: 'Marsonia116!',
 };
 
 // Pachetele și prețul de pornire (folosit în /admin pentru estimarea încasărilor)
