@@ -3,10 +3,10 @@ import Base from '../layouts/Base.astro';
 import { SITE, PACKAGES } from '../consts';
 const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
 ---
-<Base title="Admin — the bride feed" description="Panou intern." bare>
+<Base title="Admin · the bride feed" description="Panou intern." bare>
   <meta slot="head" name="robots" content="noindex, nofollow" />
 
-  <div class="lock" id="lock" data-pass={SITE.adminPass}>
+  <div class="lock" id="lock" data-pass={remote ? '' : SITE.adminPass}>
     <div class="lock-box">
       <span class="eyebrow" style="justify-content: center;"><span class="live-dot" aria-hidden="true"></span>admin</span>
       <h1 class="h-md">Panou intern</h1>

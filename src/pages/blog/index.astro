@@ -9,7 +9,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
 const fmt = (d: Date) => new Intl.DateTimeFormat('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
 ---
 <Base
-  title={`Blog — ${SITE.name}`}
+  title={`Blog · ${SITE.name}`}
   description="Ghiduri și idei pentru mirese: content de nuntă, reels, social media și cum să-ți trăiești ziua fără să ratezi niciun moment."
 >
   <section class="section">

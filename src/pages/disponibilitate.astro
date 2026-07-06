@@ -3,18 +3,18 @@ import Base from '../layouts/Base.astro';
 import { SITE, PACKAGES } from '../consts';
 ---
 <Base
-  title={`Disponibilitate — ${SITE.name}`}
+  title={`Disponibilitate · ${SITE.name}`}
   description="Vezi ce date sunt libere și rezervate și verifică disponibilitatea pentru nunta ta. Wedding content creator în București și pe o rază de ~200 km."
 >
   <section class="section" style="padding-top: clamp(2.5rem, 6vw, 4rem);">
     <div class="container">
       <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>disponibilitate</span>
       <h1 class="h-lg">Verifică disponibilitatea</h1>
-      <p class="lead mt-2">Alege o zi liberă din calendar, completezi câteva detalii și îți răspundem repede pe WhatsApp. Zilele tăiate sunt deja rezervate.</p>
+      <p class="lead mt-2">Alege o zi liberă din calendar, completezi câteva detalii și te contactăm repede. Zilele tăiate sunt deja rezervate.</p>
 
       <div class="avail-wrap mt-3">
         <div>
-          <div class="cal" id="cal" data-whatsapp={SITE.whatsapp}></div>
+          <div class="cal" id="cal"></div>
           <div class="cal-legend">
             <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
             <span><i style="background: var(--blush);"></i>rezervat</span>
@@ -22,9 +22,8 @@ import { SITE, PACKAGES } from '../consts';
         </div>
         <div class="avail-note">
           <h2 class="h-md">Cum merge</h2>
-          <p>Calendarul arată în timp real ce zile mai avem libere din sezon. Dai click pe o zi liberă, completezi un formular scurt (numele tău, telefon și ce pachet te interesează), iar noi îți confirmăm disponibilitatea pe WhatsApp.</p>
-          <p style="margin-top: .8rem;">Locurile din sezonul cald se ocupă repede — dacă ai deja data nunții, scrie-ne cât mai devreme.</p>
-          <a href={SITE.whatsapp} class="btn btn-primary mt-2" target="_blank" rel="noopener">Scrie-ne direct</a>
+          <p>Calendarul arată în timp real ce zile mai avem libere din sezon. Dai click pe o zi liberă, completezi un formular scurt (numele tău, telefon și ce pachet te interesează), iar noi verificăm disponibilitatea și te contactăm.</p>
+          <p style="margin-top: .8rem;">Locurile din sezonul cald se ocupă repede. Dacă ai deja data nunții, trimite o cerere cât mai devreme.</p>
         </div>
       </div>
     </div>
@@ -51,11 +50,11 @@ import { SITE, PACKAGES } from '../consts';
       <div class="faq mt-3">
         <details>
           <summary>Cum rezerv o dată?</summary>
-          <p>Alegi o zi liberă din calendar, ne scrii pe WhatsApp (data e completată automat), confirmăm disponibilitatea și blocăm ziua cu un avans. Din acel moment, data apare ca rezervată.</p>
+          <p>Alegi o zi liberă din calendar și trimiți o cerere scurtă (data e completată automat). Noi confirmăm disponibilitatea și blocăm ziua cu un avans. Din acel moment, data apare ca rezervată.</p>
         </details>
         <details>
           <summary>Ce înseamnă o dată tăiată?</summary>
-          <p>E deja rezervată de alt cuplu. Poți alege altă zi sau ne poți scrie pentru lista de așteptare — uneori apar reprogramări.</p>
+          <p>E deja rezervată de alt cuplu. Poți alege altă zi sau ne poți scrie pentru lista de așteptare. Uneori apar reprogramări.</p>
         </details>
         <details>
           <summary>Cât e avansul?</summary>
@@ -72,7 +71,7 @@ import { SITE, PACKAGES } from '../consts';
   <dialog class="modal" id="leadModal">
     <form class="modal-in" id="leadForm">
       <h3>Verifică disponibilitatea</h3>
-      <p style="color: var(--muted); font-size: .9rem; margin: -.6rem 0 1rem;">Pentru <b id="leadDateLabel" style="color: var(--coral-ink);"></b>. Completează și îți răspundem repede pe WhatsApp.</p>
+      <p style="color: var(--muted); font-size: .9rem; margin: -.6rem 0 1rem;">Pentru <b id="leadDateLabel" style="color: var(--coral-ink);"></b>. Completează și te contactăm repede, de obicei în aceeași zi.</p>
       <input type="hidden" id="l-date" />
       <div class="field"><label for="l-name">Numele tău *</label><input type="text" id="l-name" required placeholder="Ex. Andra" /></div>
       <div class="field"><label for="l-phone">Telefon *</label><input type="tel" id="l-phone" required placeholder="07xx xxx xxx" /></div>
@@ -80,14 +79,21 @@ import { SITE, PACKAGES } from '../consts';
       <div class="field"><label for="l-couple">Numele mirilor</label><input type="text" id="l-couple" placeholder="Ex. Andra & Vlad" /></div>
       <div class="field"><label for="l-location">Locația nunții</label><input type="text" id="l-location" placeholder="Ex. Restaurant X, București" /></div>
       <div class="field"><label for="l-pkg">Pachet dorit</label>
-        <select id="l-pkg"><option value="">— alege (opțional) —</option>{PACKAGES.map((p) => <option value={p.name}>{p.name}</option>)}</select>
+        <select id="l-pkg"><option value="">alege (opțional)</option>{PACKAGES.map((p) => <option value={p.name}>{p.name}</option>)}</select>
       </div>
       <div class="field"><label for="l-notes">Mesaj</label><textarea id="l-notes" placeholder="Câteva detalii despre nuntă..."></textarea></div>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" id="l-cancel">Anulează</button>
-        <button type="submit" class="btn btn-primary" style="margin-left: auto;">Trimite & deschide WhatsApp</button>
+        <button type="submit" class="btn btn-primary" style="margin-left: auto;">Trimite cererea</button>
       </div>
     </form>
+    <div class="modal-in" id="leadSuccess" hidden style="text-align: center;">
+      <h3>Cerere trimisă! 🎉</h3>
+      <p style="color: var(--muted); margin-top: .8rem;">Am primit cererea pentru <b id="successDateLabel" style="color: var(--coral-ink);"></b>. Verificăm disponibilitatea și te contactăm în cel mai scurt timp.</p>
+      <div class="modal-actions" style="justify-content: center; margin-top: 1.2rem;">
+        <button type="button" class="btn btn-primary" id="l-done">Am înțeles</button>
+      </div>
+    </div>
   </dialog>
 
   <script>
@@ -95,9 +101,11 @@ import { SITE, PACKAGES } from '../consts';
     import { listBookedDates, subscribe, createLead } from '../lib/store.js';
 
     const root = document.getElementById('cal');
-    const wa = root?.dataset.whatsapp || '';
     const modal = document.getElementById('leadModal') as HTMLDialogElement;
     const dateLabel = document.getElementById('leadDateLabel');
+    const form = document.getElementById('leadForm') as HTMLFormElement;
+    const successPanel = document.getElementById('leadSuccess');
+    const successDateLabel = document.getElementById('successDateLabel');
     const lf = {
       date: document.getElementById('l-date') as HTMLInputElement,
       name: document.getElementById('l-name') as HTMLInputElement,
@@ -114,6 +122,8 @@ import { SITE, PACKAGES } from '../consts';
       if (dateLabel) dateLabel.textContent = prettyDate(ds);
       ['name', 'phone', 'email', 'couple', 'location', 'notes'].forEach((k) => { lf[k].value = ''; });
       lf.pkg.value = '';
+      if (form) form.hidden = false;
+      if (successPanel) successPanel.hidden = true;
       modal?.showModal();
     }
 
@@ -130,21 +140,26 @@ import { SITE, PACKAGES } from '../consts';
     }
 
     document.getElementById('l-cancel')?.addEventListener('click', () => modal?.close());
-    document.getElementById('leadForm')?.addEventListener('submit', async (e) => {
+    document.getElementById('l-done')?.addEventListener('click', () => modal?.close());
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const lead = {
         date: lf.date.value, name: lf.name.value, phone: lf.phone.value, email: lf.email.value,
         couple: lf.couple.value, location: lf.location.value, pkg: lf.pkg.value, notes: lf.notes.value,
       };
-      try { await createLead(lead); } catch (err) { console.error('createLead', err); }
-      const [y, m, d] = lf.date.value.split('-');
-      let msg = `Salut! Sunt ${lf.name.value || ''}. Vreau să verific disponibilitatea pentru ${d}.${m}.${y}.`;
-      if (lf.pkg.value) msg += ` Pachet dorit: ${lf.pkg.value}.`;
-      if (lf.couple.value) msg += ` Miri: ${lf.couple.value}.`;
-      if (lf.location.value) msg += ` Locație: ${lf.location.value}.`;
-      if (lf.notes.value) msg += ` ${lf.notes.value}`;
-      modal?.close();
-      window.open(`${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+      const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      if (btn) { btn.disabled = true; btn.textContent = 'Se trimite...'; }
+      try {
+        await createLead(lead);
+        if (successDateLabel) successDateLabel.textContent = prettyDate(lf.date.value);
+        form.hidden = true;
+        if (successPanel) successPanel.hidden = false;
+      } catch (err) {
+        console.error('createLead', err);
+        alert('A apărut o eroare la trimitere. Te rugăm încearcă din nou.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Trimite cererea'; }
+      }
     });
   </script>
 </Base>

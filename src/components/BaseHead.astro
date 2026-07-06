@@ -11,6 +11,8 @@ interface Props {
 const { title, description, image = '/og-default.jpg', type = 'website' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image, Astro.site);
+// GA4: se încarcă doar dacă e configurat un ID și nu suntem în /admin (ca să nu poluăm statisticile).
+const enableGA = Boolean(SITE.ga4Id) && !Astro.url.pathname.startsWith('/admin');
 ---
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,3 +44,15 @@ const ogImage = new URL(image, Astro.site);
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogImage} />
+
+{enableGA && (
+  <Fragment>
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${SITE.ga4Id}`}></script>
+    <script is:inline define:vars={{ ga4Id: SITE.ga4Id }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', ga4Id);
+    </script>
+  </Fragment>
+)}
