@@ -4,6 +4,7 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import WhatsappFab from '../components/WhatsappFab.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 
 interface Props {
   title: string;
@@ -26,6 +27,7 @@ const { title, description, image, type, bare = false } = Astro.props;
     <main id="main"><slot /></main>
     {!bare && <Footer />}
     {!bare && <WhatsappFab />}
+    {!bare && <CookieConsent />}
     {!bare && (
       <script>
         import { logEvent } from '../lib/store.js';

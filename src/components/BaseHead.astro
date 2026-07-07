@@ -11,8 +11,10 @@ interface Props {
 const { title, description, image = '/og-default.jpg', type = 'website' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image, Astro.site);
-// GA4: se încarcă doar dacă e configurat un ID și nu suntem în /admin (ca să nu poluăm statisticile).
-const enableGA = Boolean(SITE.ga4Id) && !Astro.url.pathname.startsWith('/admin');
+// Tagging (GA4 + Google Ads) prin gtag.js. NU se încarcă în /admin (ca să nu poluăm statisticile).
+// Consimțământul e gestionat prin Consent Mode v2 — vezi CookieConsent.astro.
+const isAdmin = Astro.url.pathname.startsWith('/admin');
+const enableTagging = Boolean(SITE.ga4Id || SITE.googleAdsId) && !isAdmin;
 ---
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -45,14 +47,25 @@ const enableGA = Boolean(SITE.ga4Id) && !Astro.url.pathname.startsWith('/admin')
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogImage} />
 
-{enableGA && (
+{enableTagging && (
   <Fragment>
-    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${SITE.ga4Id}`}></script>
-    <script is:inline define:vars={{ ga4Id: SITE.ga4Id }}>
+    <script is:inline define:vars={{ ga4Id: SITE.ga4Id, adsId: SITE.googleAdsId }}>
       window.dataLayer = window.dataLayer || [];
       function gtag() { dataLayer.push(arguments); }
+      // Consent Mode v2: totul refuzat implicit; se actualizează după alegerea din bannerul de cookies.
+      let __c = null;
+      try { __c = JSON.parse(localStorage.getItem('tbf_consent_v1') || 'null'); } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: __c && __c.analytics ? 'granted' : 'denied',
+        ad_storage: __c && __c.marketing ? 'granted' : 'denied',
+        ad_user_data: __c && __c.marketing ? 'granted' : 'denied',
+        ad_personalization: __c && __c.marketing ? 'granted' : 'denied',
+        wait_for_update: 500,
+      });
       gtag('js', new Date());
-      gtag('config', ga4Id);
+      if (ga4Id) gtag('config', ga4Id);
+      if (adsId) gtag('config', adsId);
     </script>
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${SITE.ga4Id || SITE.googleAdsId}`}></script>
   </Fragment>
 )}

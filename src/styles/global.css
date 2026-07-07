@@ -296,6 +296,8 @@ em.accent { font-style: italic; color: var(--coral-ink); }
 }
 .wa-fab:hover { transform: scale(1.06); box-shadow: 0 10px 26px rgba(0, 0, 0, .24); }
 .wa-fab svg { width: 30px; height: 30px; }
+/* ascunde FAB-ul cât timp bannerul de cookies e deschis (evită suprapunerea) */
+body.cc-open .wa-fab { opacity: 0; pointer-events: none; }
 
 /* calendar */
 .cal { width: 100%; background: var(--ivory-2); border: 1px solid var(--hair-2); border-radius: var(--r); padding: clamp(1rem, 3vw, 1.4rem); }

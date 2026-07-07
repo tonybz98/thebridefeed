@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../consts';
+const operator = SITE.legalOperator || '[operatorul, de completat]';
+const domain = SITE.url.replace('https://', '');
+---
+<Base
+  title={`Termeni și condiții · ${SITE.name}`}
+  description="Termenii și condițiile de utilizare a site-ului thebridefeed.ro și ale serviciilor the bride feed."
+>
+  <section class="section" style="padding-top: clamp(2.5rem, 6vw, 4rem);">
+    <div class="container" style="max-width: 780px;">
+      <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>termeni</span>
+      <h1 class="h-lg">Termeni și condiții</h1>
+      <p class="lead mt-2">Termenii de utilizare a site-ului <b>{domain}</b> și ale serviciilor „the bride feed". Prin folosirea site-ului, ești de acord cu ei.</p>
+
+      <div class="legal-doc">
+        <h2>1. Despre noi</h2>
+        <p>Site-ul {domain} este administrat de {operator} și prezintă serviciile de wedding content creator „the bride feed": conținut foto-video pentru social media, livrat în ziua nunții și în zilele următoare.</p>
+
+        <h2>2. Serviciile</h2>
+        <p>Informațiile despre pachete și prețuri de pe site sunt orientative și pot fi ajustate în funcție de nunta ta. Oferta finală și detaliile colaborării se stabilesc direct cu tine, iar condițiile concrete (durată, livrabile, avans, plată) se agreează înainte de eveniment.</p>
+
+        <h2>3. Cereri și rezervări</h2>
+        <p>Prin formularul de disponibilitate trimiți o cerere, nu o rezervare fermă. O dată se consideră rezervată doar după ce confirmăm disponibilitatea și, de regulă, după achitarea unui avans. Detaliile se stabilesc de comun acord.</p>
+
+        <h2>4. Proprietate intelectuală</h2>
+        <p>Conținutul acestui site (texte, design, materiale) aparține „the bride feed" și nu poate fi copiat sau reutilizat fără acord. Drepturile asupra materialelor filmate la eveniment se stabilesc prin înțelegerea dintre părți.</p>
+
+        <h2>5. Răspundere</h2>
+        <p>Ne străduim ca informațiile de pe site să fie corecte și actuale, dar nu garantăm că sunt complete în orice moment. Nu răspundem pentru eventuale erori sau pentru indisponibilitatea temporară a site-ului.</p>
+
+        <h2>6. Date personale</h2>
+        <p>Prelucrarea datelor tale este descrisă în <a href="/confidentialitate/">Politica de confidențialitate</a>, iar folosirea cookies în <a href="/cookies/">Politica de cookies</a>.</p>
+
+        <h2>7. Legea aplicabilă</h2>
+        <p>Acestor termeni li se aplică legea română. Eventualele neînțelegeri le rezolvăm, de preferință, pe cale amiabilă.</p>
+
+        <h2>8. Contact</h2>
+        <p>Pentru orice întrebare, scrie-ne la <a href={`mailto:${SITE.email}`}>{SITE.email}</a> sau la {SITE.phone}.</p>
+
+        <p class="legal-note">Ultima actualizare: iulie 2026.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .legal-doc { margin-top: 2rem; }
+  .legal-doc h2 { font-size: 1.3rem; margin-top: 2rem; margin-bottom: .5rem; }
+  .legal-doc p { margin-top: .7rem; color: var(--ink-2); }
+  .legal-doc strong, .legal-doc b { color: var(--ink); }
+  .legal-doc a { color: var(--coral-ink); text-decoration: underline; }
+  .legal-note { font-size: .85rem; color: var(--muted); margin-top: 2rem; }
+</style>

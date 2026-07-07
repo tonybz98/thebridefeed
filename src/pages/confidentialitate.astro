@@ -1,0 +1,69 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../consts';
+const operator = SITE.legalOperator || '[operatorul, de completat]';
+const domain = SITE.url.replace('https://', '');
+---
+<Base
+  title={`Politica de confidențialitate · ${SITE.name}`}
+  description="Cum colectăm, folosim și protejăm datele tale cu caracter personal pe thebridefeed.ro, conform GDPR."
+>
+  <section class="section" style="padding-top: clamp(2.5rem, 6vw, 4rem);">
+    <div class="container" style="max-width: 780px;">
+      <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>confidențialitate</span>
+      <h1 class="h-lg">Politica de confidențialitate</h1>
+      <p class="lead mt-2">Confidențialitatea ta contează. Mai jos găsești, pe scurt și pe limba tuturor, ce date colectăm, de ce, cât le păstrăm și ce drepturi ai.</p>
+
+      <div class="legal-doc">
+        <h2>1. Cine suntem (operatorul de date)</h2>
+        <p>Operatorul datelor tale cu caracter personal este {operator}, care administrează site-ul <b>{domain}</b> („the bride feed"). Ne poți contacta oricând la <a href={`mailto:${SITE.email}`}>{SITE.email}</a> sau la {SITE.phone}.</p>
+
+        <h2>2. Ce date colectăm</h2>
+        <p><strong>Date pe care ni le dai tu</strong>, prin formularul de disponibilitate/contact: nume, număr de telefon, adresă de email și, opțional, numele mirilor, locația și data nunții, pachetul dorit și mesajul tău.</p>
+        <p><strong>Date colectate automat</strong>, dacă ești de acord prin bannerul de cookies: informații de utilizare a site-ului (pagini vizitate, tip de dispozitiv) prin Google Analytics, și date pentru marketing prin Meta, TikTok și Google Ads. Detalii în <a href="/cookies/">Politica de cookies</a>.</p>
+
+        <h2>3. De ce le folosim și pe ce temei legal</h2>
+        <p><strong>Ca să răspundem cererii tale</strong> și să îți facem o ofertă (nume, telefon, email, detalii nuntă). Temei: efectuarea de demersuri la cererea ta înainte de încheierea unui contract și interesul nostru legitim de a te contacta (art. 6 alin. 1 lit. b și f GDPR).</p>
+        <p><strong>Pentru analiză și marketing</strong> (cookies GA4, Meta, TikTok, Google Ads). Temei: consimțământul tău, pe care îl poți retrage oricând (art. 6 alin. 1 lit. a GDPR).</p>
+
+        <h2>4. Cu cine împărțim datele</h2>
+        <p>Nu vindem datele tale. Le folosim doar noi și furnizorii care ne ajută să operăm site-ul, ca împuterniciți:</p>
+        <ul class="legal-list">
+          <li><b>Supabase</b>:găzduirea bazei de date (cererile tale).</li>
+          <li><b>Resend</b>:trimiterea notificărilor pe email către noi.</li>
+          <li><b>Vercel</b>:găzduirea site-ului.</li>
+          <li><b>Google</b> (Analytics, Ads), <b>Meta</b>, <b>TikTok</b>:doar dacă accepți cookies de analiză/marketing.</li>
+        </ul>
+        <p>Unii dintre acești furnizori pot prelucra date în afara UE (de ex. SUA). În aceste cazuri, transferul se face pe baza clauzelor contractuale standard aprobate de Comisia Europeană.</p>
+
+        <h2>5. Cât timp păstrăm datele</h2>
+        <p>Păstrăm datele din cereri atât timp cât e nevoie ca să discutăm și, dacă e cazul, să colaborăm, plus perioada impusă de lege (de exemplu, obligațiile contabile). Când nu mai sunt necesare, le ștergem. Datele de analiză/marketing se păstrează conform politicilor furnizorilor respectivi.</p>
+
+        <h2>6. Drepturile tale</h2>
+        <p>Conform GDPR, ai dreptul la: acces la date, rectificare, ștergere („dreptul de a fi uitat"), restricționarea prelucrării, opoziție, portabilitatea datelor și retragerea consimțământului în orice moment. Pentru oricare dintre ele, scrie-ne la <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+        <p>Ai și dreptul să depui o plângere la <b>Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP)</b>, <a href="https://www.dataprotection.ro" target="_blank" rel="noopener">dataprotection.ro</a>.</p>
+
+        <h2>7. Securitate</h2>
+        <p>Luăm măsuri rezonabile ca datele tale să fie protejate: acces restricționat la baza de date, conexiuni criptate și furnizori care respectă standarde de securitate. Niciun sistem nu e 100% sigur, dar tratăm datele tale cu grijă.</p>
+
+        <h2>8. Cookies</h2>
+        <p>Site-ul folosește cookies. Le poți gestiona oricând din <a href="#" data-cc-settings>Setări cookies</a> sau din <a href="/cookies/">Politica de cookies</a>.</p>
+
+        <h2>9. Modificări</h2>
+        <p>Putem actualiza această politică. Versiunea curentă e mereu disponibilă pe această pagină.</p>
+
+        <p class="legal-note">Ultima actualizare: iulie 2026.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .legal-doc { margin-top: 2rem; }
+  .legal-doc h2 { font-size: 1.3rem; margin-top: 2rem; margin-bottom: .5rem; }
+  .legal-doc p { margin-top: .7rem; color: var(--ink-2); }
+  .legal-doc strong { color: var(--ink); }
+  .legal-doc a { color: var(--coral-ink); text-decoration: underline; }
+  .legal-list { margin: .7rem 0 0 1.1rem; color: var(--ink-2); display: grid; gap: .4rem; }
+  .legal-note { font-size: .85rem; color: var(--muted); margin-top: 2rem; }
+</style>

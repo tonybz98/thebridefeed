@@ -1,0 +1,46 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../consts';
+---
+<Base
+  title={`Politica de cookies · ${SITE.name}`}
+  description="Ce cookies folosim pe thebridefeed.ro și cum îți poți gestiona preferințele în orice moment."
+>
+  <section class="section" style="padding-top: clamp(2.5rem, 6vw, 4rem);">
+    <div class="container" style="max-width: 780px;">
+      <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>cookies</span>
+      <h1 class="h-lg">Politica de cookies</h1>
+      <p class="lead mt-2">Această pagină explică ce cookies folosim pe {SITE.url.replace('https://', '')} și cum îți poți gestiona preferințele oricând.</p>
+
+      <div class="cookie-doc">
+        <h2>Ce sunt cookies</h2>
+        <p>Cookies sunt fișiere mici salvate pe dispozitivul tău când vizitezi un site. Ne ajută să facem site-ul să funcționeze, să înțelegem cum e folosit și, dacă ești de acord, să îți arătăm reclame relevante.</p>
+
+        <h2>Ce categorii folosim</h2>
+        <p><strong>Necesare</strong> (mereu active). Esențiale pentru funcționarea site-ului, de exemplu memorarea preferinței tale de cookies. Nu pot fi dezactivate și nu te identifică personal.</p>
+        <p><strong>Analiză</strong> (opțional). Google Analytics 4, ne arată anonim câți vizitatori avem și ce pagini sunt vizitate, ca să îmbunătățim site-ul.</p>
+        <p><strong>Marketing</strong> (opțional). Meta Pixel (Facebook/Instagram), TikTok Pixel și Google Ads, folosite pentru reclame relevante și pentru a măsura eficiența campaniilor.</p>
+
+        <h2>Consimțământ</h2>
+        <p>Cookies de analiză și de marketing se activează <strong>doar după</strong> ce le accepți în bannerul afișat la prima vizită. Poți accepta tot, respinge tot (rămân doar cele necesare) sau alege pe categorii. Îți poți schimba oricând opțiunea:</p>
+        <p><button type="button" data-cc-settings class="btn btn-primary" style="margin-top: .4rem;">Setări cookies</button></p>
+
+        <h2>Cum le poți controla și din browser</h2>
+        <p>Poți șterge sau bloca cookies și din setările browserului tău. Dacă blochezi cookies necesare, unele funcții ale site-ului pot să nu mai meargă corect.</p>
+
+        <h2>Contact</h2>
+        <p>Pentru orice întrebare legată de date sau cookies, ne poți scrie la <a href={`mailto:${SITE.email}`} style="color: var(--coral-ink); text-decoration: underline;">{SITE.email}</a>.</p>
+
+        <p class="cookie-note">Ultima actualizare: iulie 2026.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .cookie-doc { margin-top: 2rem; }
+  .cookie-doc h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: .6rem; }
+  .cookie-doc p { margin-top: .7rem; color: var(--ink-2); }
+  .cookie-doc strong { color: var(--ink); }
+  .cookie-note { font-size: .85rem; color: var(--muted); margin-top: 2rem; }
+</style>

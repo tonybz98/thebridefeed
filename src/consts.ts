@@ -13,7 +13,15 @@ export const SITE = {
   region: 'București și Ilfov',
   radiusKm: 200,
   // Google Analytics 4 — Measurement ID (format G-XXXXXXXXXX). Lasă gol ca să dezactivezi.
+  // Categoria „analiză" din bannerul de cookies.
   ga4Id: 'G-T6YGMXNMWC',
+  // Marketing — categoria „marketing" din bannerul de cookies. Lasă gol ca să dezactivezi fiecare.
+  googleAdsId: '',    // Google Ads, format 'AW-XXXXXXXXX'
+  metaPixelId: '',    // Meta/Facebook Pixel — doar cifre, ex. '1234567890123456'
+  tiktokPixelId: '',  // TikTok Pixel — ex. 'CXXXXXXXXXXXXXXXXXXX' (din TikTok Ads Manager)
+  // Operatorul de date pentru Politica de confidențialitate.
+  // Acum persoană fizică; la înființarea PFA înlocuiește cu denumirea completă, CUI-ul și sediul.
+  legalOperator: 'Antonio-Ionuț Porumbiță (persoană fizică)',
   // Folosit DOAR ca poartă locală a /admin când Supabase NU e conectat (dev).
   // În producție login-ul e prin contul Supabase (contact@thebridefeed.ro) — parola reală se schimbă acolo.
   adminPass: 'Marsonia1106!',

@@ -82,6 +82,10 @@ import { SITE, PACKAGES } from '../consts';
         <select id="l-pkg"><option value="">alege (opțional)</option>{PACKAGES.map((p) => <option value={p.name}>{p.name}</option>)}</select>
       </div>
       <div class="field"><label for="l-notes">Mesaj</label><textarea id="l-notes" placeholder="Câteva detalii despre nuntă..."></textarea></div>
+      <label style="display: flex; gap: .55rem; align-items: flex-start; font-size: .85rem; color: var(--muted); margin: .2rem 0 .4rem;">
+        <input type="checkbox" id="l-consent" required style="margin-top: .25rem; flex: none;" />
+        <span>Sunt de acord cu <a href="/confidentialitate/" target="_blank" rel="noopener" style="color: var(--coral-ink); text-decoration: underline;">Politica de confidențialitate</a>. *</span>
+      </label>
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" id="l-cancel">Anulează</button>
         <button type="submit" class="btn btn-primary" style="margin-left: auto;">Trimite cererea</button>
@@ -122,6 +126,8 @@ import { SITE, PACKAGES } from '../consts';
       if (dateLabel) dateLabel.textContent = prettyDate(ds);
       ['name', 'phone', 'email', 'couple', 'location', 'notes'].forEach((k) => { lf[k].value = ''; });
       lf.pkg.value = '';
+      const consent = document.getElementById('l-consent') as HTMLInputElement;
+      if (consent) consent.checked = false;
       if (form) form.hidden = false;
       if (successPanel) successPanel.hidden = true;
       modal?.showModal();

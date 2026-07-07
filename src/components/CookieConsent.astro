@@ -1,0 +1,172 @@
+---
+// Banner de consimțământ cookies (GDPR / ePrivacy).
+// Gestionează Consent Mode v2 (GA4 + Google Ads via gtag din BaseHead) și încarcă
+// pixelii de marketing (Meta, TikTok) DOAR după consimțământ pe categoria „marketing".
+import { SITE } from '../consts';
+---
+<div class="cc-banner" id="cc-banner" role="dialog" aria-label="Consimțământ cookies" aria-live="polite" hidden>
+  <div class="cc-inner">
+    <div class="cc-copy">
+      <strong>Folosim cookies 🍪</strong>
+      <p>
+        Folosim cookies pentru a analiza traficul și pentru marketing. Cele necesare sunt mereu active.
+        Poți accepta tot, respinge sau alege ce permiți. <a href="/cookies/">Detalii</a>.
+      </p>
+    </div>
+    <div class="cc-actions">
+      <button type="button" class="btn btn-ghost cc-btn" id="cc-reject">Doar necesare</button>
+      <button type="button" class="btn btn-ghost cc-btn" id="cc-prefs">Preferințe</button>
+      <button type="button" class="btn btn-primary cc-btn" id="cc-accept">Accept toate</button>
+    </div>
+  </div>
+</div>
+
+<dialog class="modal cc-modal" id="cc-modal" aria-label="Setări cookies">
+  <div class="modal-in">
+    <h3>Setări cookies</h3>
+    <div class="cc-cat">
+      <div class="cc-cat-top">
+        <span class="cc-cat-name">Necesare</span>
+        <span class="cc-always">mereu active</span>
+      </div>
+      <p>Esențiale pentru funcționarea site-ului (calendar, formulare). Nu pot fi dezactivate.</p>
+    </div>
+    <div class="cc-cat">
+      <div class="cc-cat-top">
+        <label class="cc-cat-name" for="cc-analytics">Analiză</label>
+        <label class="cc-switch"><input type="checkbox" id="cc-analytics" /><span></span></label>
+      </div>
+      <p>Google Analytics: ne ajută să înțelegem cum e folosit site-ul, anonim.</p>
+    </div>
+    <div class="cc-cat">
+      <div class="cc-cat-top">
+        <label class="cc-cat-name" for="cc-marketing">Marketing</label>
+        <label class="cc-switch"><input type="checkbox" id="cc-marketing" /><span></span></label>
+      </div>
+      <p>Meta, TikTok și Google Ads, folosite pentru reclame relevante și retargeting.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="cc-save">Salvează preferințele</button>
+      <button type="button" class="btn btn-primary" id="cc-accept-all" style="margin-left: auto;">Accept toate</button>
+    </div>
+  </div>
+</dialog>
+
+<script is:inline define:vars={{ META: SITE.metaPixelId, TIKTOK: SITE.tiktokPixelId }}>
+  (function () {
+    var KEY = 'tbf_consent_v1';
+    var banner = document.getElementById('cc-banner');
+    var modal = document.getElementById('cc-modal');
+    var cbA = document.getElementById('cc-analytics');
+    var cbM = document.getElementById('cc-marketing');
+
+    function read() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+
+    function gtagUpdate(c) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('consent', 'update', {
+        analytics_storage: c.analytics ? 'granted' : 'denied',
+        ad_storage: c.marketing ? 'granted' : 'denied',
+        ad_user_data: c.marketing ? 'granted' : 'denied',
+        ad_personalization: c.marketing ? 'granted' : 'denied',
+      });
+    }
+
+    function loadMeta(id) {
+      if (!id || window.__ccMeta) return; window.__ccMeta = true;
+      !function (f, b, e, v, n, t, s) {
+        if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+        if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = [];
+        t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
+      }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+      window.fbq('init', id); window.fbq('track', 'PageView');
+    }
+
+    function loadTikTok(id) {
+      if (!id || window.__ccTk) return; window.__ccTk = true;
+      !function (w, d, t) {
+        w.TiktokAnalyticsObject = t; var ttq = w[t] = w[t] || [];
+        ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie', 'holdConsent', 'revokeConsent', 'grantConsent'];
+        ttq.setAndDefer = function (t, e) { t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))); }; };
+        for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i]);
+        ttq.instance = function (t) { for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++) ttq.setAndDefer(e, ttq.methods[n]); return e; };
+        ttq.load = function (e, n) { var r = 'https://analytics.tiktok.com/i18n/pixel/events.js'; ttq._i = ttq._i || {}; ttq._i[e] = []; ttq._i[e]._u = r; ttq._t = ttq._t || {}; ttq._t[e] = +new Date(); ttq._o = ttq._o || {}; ttq._o[e] = n || {}; var o = d.createElement('script'); o.type = 'text/javascript'; o.async = !0; o.src = r + '?sdkid=' + e + '&lib=' + t; var a = d.getElementsByTagName('script')[0]; a.parentNode.insertBefore(o, a); };
+        ttq.load(id); ttq.page();
+      }(window, document, 'ttq');
+    }
+
+    function apply(c) {
+      gtagUpdate(c);
+      if (c.marketing) { loadMeta(META); loadTikTok(TIKTOK); }
+    }
+
+    function save(c) {
+      c.necessary = true; c.ts = new Date().toISOString();
+      try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) {}
+      apply(c);
+      if (banner) banner.hidden = true;
+      document.body.classList.remove('cc-open');
+      if (modal && modal.open) modal.close();
+    }
+
+    function showBanner() { if (banner) { banner.hidden = false; document.body.classList.add('cc-open'); } }
+
+    function openPrefs() {
+      var c = read() || { analytics: false, marketing: false };
+      if (cbA) cbA.checked = !!c.analytics;
+      if (cbM) cbM.checked = !!c.marketing;
+      if (modal) modal.showModal();
+    }
+
+    // La încărcare: dacă nu există alegere → arată bannerul. Altfel → aplică alegerea salvată.
+    var stored = read();
+    if (!stored) showBanner(); else apply(stored);
+
+    document.getElementById('cc-accept')?.addEventListener('click', function () { save({ analytics: true, marketing: true }); });
+    document.getElementById('cc-reject')?.addEventListener('click', function () { save({ analytics: false, marketing: false }); });
+    document.getElementById('cc-prefs')?.addEventListener('click', openPrefs);
+    document.getElementById('cc-accept-all')?.addEventListener('click', function () { save({ analytics: true, marketing: true }); });
+    document.getElementById('cc-save')?.addEventListener('click', function () {
+      save({ analytics: !!(cbA && cbA.checked), marketing: !!(cbM && cbM.checked) });
+    });
+
+    // Link „Setări cookies" din footer (sau oriunde): redeschide preferințele.
+    document.querySelectorAll('[data-cc-settings]').forEach(function (el) {
+      el.addEventListener('click', function (e) { e.preventDefault(); openPrefs(); });
+    });
+  })();
+</script>
+
+<style>
+  .cc-banner {
+    position: fixed; left: 1rem; right: 1rem; bottom: 1rem;
+    max-width: 44rem; margin-inline: auto; z-index: 300;
+    background: var(--ivory); border: 1px solid var(--hair);
+    border-radius: var(--r); box-shadow: 0 18px 50px rgba(34, 30, 27, .22);
+    padding: clamp(1rem, 3vw, 1.4rem);
+  }
+  .cc-inner { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+  .cc-copy { flex: 1 1 20rem; }
+  .cc-copy strong { font-family: var(--f-display); font-size: 1.1rem; font-weight: 500; }
+  .cc-copy p { font-size: .92rem; color: var(--muted); margin-top: .3rem; }
+  .cc-copy a { color: var(--coral-ink); text-decoration: underline; }
+  .cc-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .cc-btn { padding-block: .6em; }
+  @media (max-width: 560px) { .cc-actions { width: 100%; } .cc-btn { flex: 1 1 auto; justify-content: center; } }
+
+  .cc-cat { padding: .9rem 0; border-top: 1px solid var(--hair-2); }
+  .cc-cat:first-of-type { border-top: none; }
+  .cc-cat-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .cc-cat-name { font-weight: 600; font-size: 1rem; }
+  .cc-cat p { font-size: .85rem; color: var(--muted); margin-top: .25rem; }
+  .cc-always { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .1em; color: var(--champagne); text-transform: uppercase; }
+
+  .cc-switch { position: relative; display: inline-block; width: 42px; height: 24px; flex: none; cursor: pointer; }
+  .cc-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .cc-switch span { position: absolute; inset: 0; background: var(--hair); border-radius: 999px; transition: background .18s ease; }
+  .cc-switch span::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .18s ease; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .cc-switch input:checked + span { background: var(--coral); }
+  .cc-switch input:checked + span::before { transform: translateX(18px); }
+  .cc-switch input:focus-visible + span { outline: 2.5px solid var(--coral); outline-offset: 2px; }
+</style>
