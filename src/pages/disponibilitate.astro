@@ -157,6 +157,7 @@ import { SITE, PACKAGES } from '../consts';
       if (btn) { btn.disabled = true; btn.textContent = 'Se trimite...'; }
       try {
         await createLead(lead);
+        if ((window as any).tbfTrack) (window as any).tbfTrack('generate_lead', { package: lf.pkg.value || undefined });
         if (successDateLabel) successDateLabel.textContent = prettyDate(lf.date.value);
         form.hidden = true;
         if (successPanel) successPanel.hidden = false;

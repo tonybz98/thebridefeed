@@ -31,11 +31,41 @@ const { title, description, image, type, bare = false } = Astro.props;
     {!bare && (
       <script>
         import { logEvent } from '../lib/store.js';
+
+        // Trimite un eveniment în GA4 (respectă Consent Mode) și în Meta (dacă pixelul e încărcat).
+        function tbfTrack(name, params) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() { window.dataLayer.push(arguments); }
+          gtag('event', name, params || {});
+          if (typeof window.fbq === 'function') {
+            const std = { generate_lead: 'Lead', whatsapp_click: 'Contact', email_click: 'Contact', phone_click: 'Contact' };
+            if (std[name]) window.fbq('track', std[name]);
+            else window.fbq('trackCustom', name, params || {});
+          }
+        }
+        window.tbfTrack = tbfTrack;
+
         if (!location.pathname.startsWith('/admin')) logEvent('view', location.pathname);
+
+        // Un singur listener recunoaște ce s-a apăsat și trimite evenimentul potrivit.
         document.addEventListener('click', (e) => {
-          const t = e.target;
-          const a = t && t.closest ? t.closest('a[href*="wa.me"]') : null;
-          if (a) logEvent('wa_click', location.pathname);
+          const el = e.target && e.target.closest ? e.target.closest('a, button') : null;
+          if (!el) return;
+          const href = el.getAttribute('href') || '';
+          const pkg = el.closest ? el.closest('.pkg') : null;
+          let name = null;
+          const params = {};
+          if (href.includes('wa.me') || href.includes('api.whatsapp')) { name = 'whatsapp_click'; logEvent('wa_click', location.pathname); }
+          else if (href.includes('instagram.com')) name = 'instagram_click';
+          else if (href.includes('tiktok.com')) name = 'tiktok_click';
+          else if (href.startsWith('mailto:')) name = 'email_click';
+          else if (href.startsWith('tel:')) name = 'phone_click';
+          else if (pkg) { name = 'package_offer_click'; const t = pkg.querySelector('h3'); if (t) params.package = t.textContent.trim(); }
+          else if (href.includes('/disponibilitate')) name = 'check_availability_click';
+          else if (href.includes('/portofoliu')) name = 'portfolio_click';
+          else if (href.includes('/blog')) name = 'blog_click';
+          else if (href.includes('#pachete')) name = 'packages_click';
+          if (name) tbfTrack(name, params);
         });
       </script>
     )}
