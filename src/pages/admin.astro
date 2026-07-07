@@ -44,46 +44,60 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         </div>
       </header>
 
-      <div class="admin-section">
-        <div class="admin-section-head admin-section-head--row">
-          <div>
-            <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>cereri noi</span>
-            <h2 class="h-md">Lead-uri din calendar</h2>
+      <!-- SUMAR -->
+      <div class="admin-summary" id="summary"></div>
+
+      <!-- TAB-URI -->
+      <nav class="admin-tabs" role="tablist">
+        <button type="button" class="admin-tab is-active" data-tab="cereri" role="tab">
+          Cereri <span class="tab-count" id="tab-count-cereri" hidden></span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="calendar" role="tab">Calendar</button>
+        <button type="button" class="admin-tab" data-tab="bani" role="tab">Bani</button>
+      </nav>
+
+      <!-- TAB: CERERI -->
+      <div class="admin-panel" data-panel="cereri">
+        <div class="cereri-toolbar">
+          <div class="lead-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+            <input type="search" id="lead-search" placeholder="Caută nume, telefon, email..." />
           </div>
+          <label class="cereri-toggle"><input type="checkbox" id="show-anulate" /> Arată anulate</label>
           <div class="export-actions">
             <button type="button" class="btn btn-ghost" id="exp-csv">Export CSV</button>
             <button type="button" class="btn btn-ghost" id="exp-xls">Export Excel</button>
           </div>
         </div>
-        <div class="lead-list" id="leadlist"></div>
+        <div class="kanban" id="kanban"></div>
       </div>
 
-      <div class="admin-section">
-        <div class="admin-section-head">
-          <span class="eyebrow">crm</span>
-          <h2 class="h-md">Pipeline &amp; încasări</h2>
+      <!-- TAB: CALENDAR -->
+      <div class="admin-panel" data-panel="calendar" hidden>
+        <div class="admin-grid-2" style="margin-bottom: 0;">
+          <div class="admin-card">
+            <div class="admin-card-head">
+              <h3 class="admin-card-title">Calendar nunți</h3>
+              <span class="admin-card-hint">click pe o zi → blochezi / editezi</span>
+            </div>
+            <div class="cal" id="cal"></div>
+            <div class="cal-legend">
+              <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
+              <span><i style="background: var(--blush);"></i>rezervat</span>
+            </div>
+          </div>
+          <div class="admin-card">
+            <div class="admin-card-head">
+              <h3 class="admin-card-title">Nunți rezervate</h3>
+            </div>
+            <div class="bk-list" id="bklist"></div>
+          </div>
         </div>
+      </div>
+
+      <!-- TAB: BANI -->
+      <div class="admin-panel" data-panel="bani" hidden>
         <div id="crmdash"></div>
-      </div>
-
-      <div class="admin-grid-2">
-        <div class="admin-card">
-          <div class="admin-card-head">
-            <h3 class="admin-card-title">Calendar nunți</h3>
-            <span class="admin-card-hint">click pe o zi → blochezi / editezi</span>
-          </div>
-          <div class="cal" id="cal"></div>
-          <div class="cal-legend">
-            <span><i style="background: var(--ivory); border: 1px solid var(--hair);"></i>liber</span>
-            <span><i style="background: var(--blush);"></i>rezervat</span>
-          </div>
-        </div>
-        <div class="admin-card">
-          <div class="admin-card-head">
-            <h3 class="admin-card-title">Nunți rezervate</h3>
-          </div>
-          <div class="bk-list" id="bklist"></div>
-        </div>
       </div>
 
     </div>
@@ -318,30 +332,106 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       return on.length ? `<div class="lead-chips">${on.join('')}</div>` : '';
     }
 
-    function renderLeads() {
-      const el = document.getElementById('leadlist');
-      if (!el) return;
-      if (!leads.length) {
-        el.innerHTML = '<p class="bk-meta">Nicio cerere încă. Aici apar lead-urile trimise din calendarul public.</p>';
-        return;
-      }
-      el.innerHTML = leads
-        .map((l) => `<div class="lead-item" data-open="${l.id}" role="button" tabindex="0">
-            <div class="lead-main">
-              <div class="lead-top"><span class="bk-date">${l.date ? prettyDate(l.date) : 'fără dată'}</span>${statusBadge(l.status)}</div>
-              <div class="lead-name"><b>${l.name || '—'}</b>${l.couple ? ' · ' + l.couple : ''}</div>
-              <div class="lead-contact">${[l.phone, l.email].filter(Boolean).join(' · ') || 'fără contact'}</div>
-              <div class="bk-meta">${[l.pkg, l.location].filter(Boolean).join(' · ')}${l.notes ? '<br>' + l.notes : ''}</div>
-              ${flagChips(l)}
+    // ---- Kanban cereri ----
+    const KANBAN_COLS = [
+      ['neprelucrat', 'Neprelucrat'],
+      ['contactat', 'Contactat'],
+      ['oferta_trimisa', 'Ofertă'],
+      ['castigat', 'Câștigat'],
+    ];
+    const QICO = {
+      wa: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12.05 21.785h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/></svg>',
+      phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4.5-2 1.2a12 12 0 0 0 5.3 5.3l1.2-2 4.5 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg>',
+      mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+    };
+    let leadQuery = '';
+    let showAnulate = false;
+
+    function waHref(phone) {
+      let d = (phone || '').replace(/\D/g, '');
+      if (d.startsWith('0')) d = '4' + d;
+      else if (!d.startsWith('40')) d = '40' + d;
+      return 'https://wa.me/' + d;
+    }
+
+    function leadCard(l) {
+      const idx = KANBAN_COLS.findIndex(([k]) => k === (l.status || 'neprelucrat'));
+      const acts = [
+        l.phone ? `<a class="qa qa-wa" href="${waHref(l.phone)}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp">${QICO.wa}</a>` : '',
+        l.phone ? `<a class="qa" href="tel:${l.phone}" title="Sună" aria-label="Sună">${QICO.phone}</a>` : '',
+        l.email ? `<a class="qa" href="mailto:${l.email}" title="Email" aria-label="Email">${QICO.mail}</a>` : '',
+      ].filter(Boolean).join('');
+      return `<div class="kcard" data-open="${l.id}" role="button" tabindex="0">
+          <div class="kcard-top">
+            <b class="kcard-name">${l.name || l.couple || 'Fără nume'}</b>
+            ${l.date ? `<span class="kcard-date">${prettyDate(l.date)}</span>` : ''}
+          </div>
+          ${l.couple && l.name ? `<div class="kcard-couple">${l.couple}</div>` : ''}
+          <div class="kcard-meta">${[l.pkg, l.location].filter(Boolean).join(' · ') || 'fără detalii'}</div>
+          ${flagChips(l)}
+          <div class="kcard-actions">
+            <div class="qa-group">${acts || '<span class="kcard-nocontact">fără contact</span>'}</div>
+            <div class="kmove">
+              <button class="kmove-btn" data-move="prev" data-id="${l.id}" ${idx > 0 ? '' : 'disabled'} title="Înapoi" aria-label="Mută înapoi">‹</button>
+              <button class="kmove-btn" data-move="next" data-id="${l.id}" ${idx >= 0 && idx < KANBAN_COLS.length - 1 ? '' : 'disabled'} title="Înainte" aria-label="Mută înainte">›</button>
             </div>
-            <span class="lead-open">Prelucrează →</span>
-          </div>`)
-        .join('');
+          </div>
+        </div>`;
+    }
+
+    function renderKanban() {
+      const el = document.getElementById('kanban');
+      if (!el) return;
+      const q = leadQuery.trim().toLowerCase();
+      const match = (l) => !q || [l.name, l.phone, l.email, l.couple, l.location].some((v) => (v || '').toLowerCase().includes(q));
+      const cols = showAnulate ? [...KANBAN_COLS, ['anulat', 'Anulat']] : KANBAN_COLS;
+      el.classList.toggle('has-anulate', showAnulate);
+      el.innerHTML = cols.map(([k, lab]) => {
+        const items = leads.filter((l) => (l.status || 'neprelucrat') === k && match(l));
+        const body = items.map(leadCard).join('') || '<p class="kempty">—</p>';
+        return `<div class="kcol st-${k}"><div class="kcol-head"><span class="kcol-title">${lab}</span><span class="kcol-count">${items.length}</span></div><div class="kcol-body">${body}</div></div>`;
+      }).join('');
       el.querySelectorAll('[data-open]').forEach((x) => {
         const id = (x as HTMLElement).dataset.open;
-        x.addEventListener('click', () => openCrm(id));
+        x.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('.qa, .kmove-btn')) return; openCrm(id); });
         x.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCrm(id); } });
       });
+      el.querySelectorAll('.kmove-btn').forEach((b) => {
+        b.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const el2 = b as HTMLElement;
+          const l = leads.find((x) => x.id === el2.dataset.id);
+          if (!l) return;
+          const idx = KANBAN_COLS.findIndex(([k]) => k === (l.status || 'neprelucrat'));
+          const nidx = el2.dataset.move === 'next' ? idx + 1 : idx - 1;
+          if (nidx < 0 || nidx >= KANBAN_COLS.length) return;
+          try { await store.updateLeadStatus(l.id, KANBAN_COLS[nidx][0]); await refreshLeads(); }
+          catch (err) { alert('Eroare: ' + (err?.message || err)); }
+        });
+      });
+    }
+
+    function renderSummary() {
+      const el = document.getElementById('summary');
+      if (!el) return;
+      const d = new Date();
+      const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      const newLeads = leads.filter((l) => (l.status || 'neprelucrat') === 'neprelucrat').length;
+      const weddings = bookings.filter((b) => (b.date || '').startsWith(ym)).length;
+      const won = leads.filter((l) => l.status === 'castigat');
+      const toCollect = won.filter((l) => !l.plata_integrala).reduce((s, l) => s + (PRICE[l.pkg] || 0), 0);
+      const toDeliver = won.filter((l) => !l.livrat).length;
+      const cards = [
+        ['Cereri noi', String(newLeads), 'chat', newLeads ? 'de prelucrat' : 'nimic nou'],
+        ['Nunți luna asta', String(weddings), 'cal'],
+        ['De încasat', lei(toCollect), 'money'],
+        ['De livrat', String(toDeliver), 'truck'],
+      ];
+      el.innerHTML = cards.map(([k, v, ic, sub]) =>
+        `<div class="sum-card"><div class="sum-ic">${ICO[ic] || ''}</div><div><div class="sum-k">${k}</div><div class="sum-v">${v}</div>${sub ? `<div class="sum-sub">${sub}</div>` : ''}</div></div>`
+      ).join('');
+      const badge = document.getElementById('tab-count-cereri');
+      if (badge) { if (newLeads > 0) { badge.textContent = String(newLeads); badge.hidden = false; } else { badge.hidden = true; } }
     }
 
     function openCrm(id) {
@@ -426,7 +516,8 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
 
     async function refreshLeads() {
       leads = await store.listLeads();
-      renderLeads();
+      renderKanban();
+      renderSummary();
       renderCrmDashboard();
     }
 
@@ -468,6 +559,7 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       bookings = await store.listBookings();
       cal?.refresh();
       renderList();
+      renderSummary();
     }
 
     async function init() {
@@ -481,7 +573,8 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         onDay: (ds) => openModal(ds),
       });
       renderList();
-      renderLeads();
+      renderKanban();
+      renderSummary();
       renderCrmDashboard();
       store.subscribe(refresh);
       store.subscribeLeads(refreshLeads);
@@ -538,5 +631,16 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
 
     document.getElementById('exp-csv')?.addEventListener('click', exportCSV);
     document.getElementById('exp-xls')?.addEventListener('click', exportXLS);
+
+    // ---- tab-uri, căutare, filtru ----
+    document.querySelectorAll('.admin-tab').forEach((t) => {
+      t.addEventListener('click', () => {
+        const name = (t as HTMLElement).dataset.tab;
+        document.querySelectorAll('.admin-tab').forEach((x) => x.classList.toggle('is-active', x === t));
+        document.querySelectorAll('.admin-panel').forEach((p) => { (p as HTMLElement).hidden = (p as HTMLElement).dataset.panel !== name; });
+      });
+    });
+    document.getElementById('lead-search')?.addEventListener('input', (e) => { leadQuery = (e.target as HTMLInputElement).value; renderKanban(); });
+    document.getElementById('show-anulate')?.addEventListener('change', (e) => { showAnulate = (e.target as HTMLInputElement).checked; renderKanban(); });
   </script>
 </Base>
