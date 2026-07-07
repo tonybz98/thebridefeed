@@ -17,7 +17,7 @@ export const SITE = {
   ga4Id: 'G-T6YGMXNMWC',
   // Marketing — categoria „marketing" din bannerul de cookies. Lasă gol ca să dezactivezi fiecare.
   googleAdsId: '',    // Google Ads, format 'AW-XXXXXXXXX'
-  metaPixelId: '',    // Meta/Facebook Pixel — doar cifre, ex. '1234567890123456'
+  metaPixelId: '1288857069727491',    // Meta/Facebook Pixel
   tiktokPixelId: '',  // TikTok Pixel — ex. 'CXXXXXXXXXXXXXXXXXXX' (din TikTok Ads Manager)
   // Operatorul de date pentru Politica de confidențialitate.
   // Acum persoană fizică; la înființarea PFA înlocuiește cu denumirea completă, CUI-ul și sediul.
