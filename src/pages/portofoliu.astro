@@ -1,17 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import { SITE } from '../consts';
-
-const reels = [
-  { cap: 'primul dans.', who: '@andra & vlad · mai 2026', ink: false },
-  { cap: 'lacrimile lui tata.', who: '@maria · iunie 2026', ink: true },
-  { cap: 'voalul.', who: '@ioana & andrei · iulie 2026', ink: false },
-  { cap: '„da”.', who: '@alina & tudor · sept 2026', ink: true },
-  { cap: 'aruncatul buchetului.', who: '@elena & radu · august 2026', ink: false },
-  { cap: 'ora 2 noaptea.', who: '@dana & mihai · sept 2026', ink: true },
-  { cap: 'pregătirile.', who: '@bianca & luca · oct 2026', ink: false },
-  { cap: 'tortul.', who: '@sorina & matei · oct 2026', ink: true },
-];
 ---
 <Base
   title={`Portofoliu · ${SITE.name}`}
@@ -21,18 +10,10 @@ const reels = [
     <div class="container">
       <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>portofoliu</span>
       <h1 class="h-lg">Momente reale, <em class="accent">postate live</em>.</h1>
-      <p class="lead mt-2">O selecție din reelsurile și clipurile filmate la nunți. Aici vor veni embed-urile reale de pe Instagram și TikTok. Momentan, locul lor.</p>
+      <p class="lead mt-2">O selecție din reelsurile și clipurile filmate la nunți, direct de pe Instagram și TikTok.</p>
 
-      <div class="portfolio-grid mt-3" role="list">
-        {reels.map((r) => (
-          <div role="listitem">
-            <div class={`reel${r.ink ? ' reel--ink' : ''}`}>
-              <div class="reel-cap" style={r.ink ? 'color: var(--ivory);' : ''}>{r.cap}</div>
-              <span class="reel-mark" style={r.ink ? 'color: var(--ivory);' : ''}><span class="live-dot" aria-hidden="true" style="width:.4em;height:.4em;"></span>the bride feed</span>
-            </div>
-            <span class="feed-cap">{r.who}</span>
-          </div>
-        ))}
+      <div class="portfolio-grid mt-3" id="pf-grid" role="list">
+        <p class="pf-empty">Se încarcă…</p>
       </div>
     </div>
   </section>
@@ -49,4 +30,13 @@ const reels = [
       </div>
     </div>
   </section>
+
+  <script>
+    import { listPortfolio, subscribePortfolio } from '../lib/store.js';
+    import { renderEmbeds } from '../lib/embeds.js';
+    const grid = document.getElementById('pf-grid');
+    async function load() { renderEmbeds(grid, await listPortfolio()); }
+    load();
+    subscribePortfolio(load);
+  </script>
 </Base>

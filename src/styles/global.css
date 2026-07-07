@@ -565,3 +565,24 @@ body.cc-open .wa-fab { opacity: 0; pointer-events: none; }
 .kmove-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--hair-2); background: #fff; color: var(--ink-2); font-size: 1.15rem; line-height: 1; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
 .kmove-btn:hover:not(:disabled) { background: var(--coral); color: #fff; border-color: var(--coral); }
 .kmove-btn:disabled { opacity: .35; cursor: default; }
+
+/* ============ portofoliu: embed-uri IG/TikTok ============ */
+#pf-grid, #feed-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); align-items: start; }
+.pf-item { min-width: 0; display: flex; flex-direction: column; }
+.pf-item .instagram-media, .pf-item .tiktok-embed { margin: 0 !important; }
+.pf-item .feed-cap { display: block; margin-top: .5rem; }
+.pf-empty { grid-column: 1 / -1; color: var(--muted); font-size: .95rem; }
+.pf-link { display: inline-flex; align-items: center; gap: .3em; color: var(--coral-ink); font-family: var(--f-mono); font-size: .9rem; text-decoration: underline; padding: 1rem 0; }
+
+/* admin: gestionare portofoliu */
+.pf-add { display: flex; gap: .6rem; flex-wrap: wrap; }
+.pf-add input { flex: 1 1 240px; background: var(--ivory-2); border: 1px solid var(--hair-2); border-radius: 10px; padding: .7rem .9rem; font-family: var(--f-sans); font-size: .92rem; color: var(--ink); }
+.pf-add input:focus-visible { outline: 2px solid var(--coral); outline-offset: 1px; }
+.pf-admin-list { display: flex; flex-direction: column; gap: .55rem; }
+.pf-row { display: flex; align-items: center; gap: .8rem; background: var(--ivory-2); border: 1px solid var(--hair-2); border-radius: 12px; padding: .7rem .9rem; }
+.pf-plat { flex: none; width: 34px; height: 34px; border-radius: 8px; background: var(--blush); color: var(--coral-ink); font-family: var(--f-mono); font-size: .7rem; font-weight: 500; display: flex; align-items: center; justify-content: center; }
+.pf-row-main { flex: 1; min-width: 0; }
+.pf-row-url { display: block; font-family: var(--f-mono); font-size: .78rem; color: var(--coral-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-row-cap { font-size: .88rem; color: var(--ink-2); margin-top: .15rem; }
+.pf-row-actions { display: flex; gap: .35rem; flex: none; }
+.pf-row-actions .bk-del { font-size: .8rem; }

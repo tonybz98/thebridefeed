@@ -155,6 +155,68 @@ export function subscribe(cb) {
   return () => window.removeEventListener('tbf:bookings', h);
 }
 
+/* ----------------- portofoliu (clipuri IG/TikTok) ----------------- */
+const LKEY_PF = 'tbf_portfolio_v1';
+function localPf() {
+  if (typeof localStorage === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem(LKEY_PF) || '[]'); } catch { return []; }
+}
+function localPfPersist(list) {
+  localStorage.setItem(LKEY_PF, JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('tbf:portfolio'));
+}
+
+// PUBLIC: oricine poate citi clipurile.
+export async function listPortfolio() {
+  if (REMOTE) {
+    const { data, error } = await supabase.from('portfolio').select('*').order('sort', { ascending: true }).order('created_at', { ascending: true });
+    if (error) { console.error('listPortfolio', error); return []; }
+    return data;
+  }
+  return localPf().sort((a, b) => (a.sort - b.sort) || String(a.created_at).localeCompare(b.created_at));
+}
+
+// ADMIN: adaugă / editează / șterge (necesită autentificare în REMOTE).
+export async function addPortfolio(item) {
+  if (REMOTE) {
+    const { error } = await supabase.from('portfolio').insert({ url: item.url, caption: item.caption || null, sort: item.sort || 0 });
+    if (error) throw error;
+    return;
+  }
+  const list = localPf();
+  list.push({ id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), url: item.url, caption: item.caption || '', sort: item.sort || 0, created_at: new Date().toISOString() });
+  localPfPersist(list);
+}
+
+export async function updatePortfolio(id, patch) {
+  if (REMOTE) {
+    const { error } = await supabase.from('portfolio').update(patch).eq('id', id);
+    if (error) throw error;
+    return;
+  }
+  localPfPersist(localPf().map((p) => (p.id === id ? { ...p, ...patch } : p)));
+}
+
+export async function deletePortfolio(id) {
+  if (REMOTE) {
+    const { error } = await supabase.from('portfolio').delete().eq('id', id);
+    if (error) throw error;
+    return;
+  }
+  localPfPersist(localPf().filter((p) => p.id !== id));
+}
+
+export function subscribePortfolio(cb) {
+  if (REMOTE) {
+    const ch = supabase.channel('tbf-portfolio').on('postgres_changes', { event: '*', schema: 'public', table: 'portfolio' }, cb).subscribe();
+    return () => supabase.removeChannel(ch);
+  }
+  const h = () => cb();
+  window.addEventListener('tbf:portfolio', h);
+  window.addEventListener('storage', (e) => { if (e.key === LKEY_PF) cb(); });
+  return () => window.removeEventListener('tbf:portfolio', h);
+}
+
 /* ----------------- auth (doar REMOTE) ----------------- */
 export async function getUser() {
   if (!REMOTE) return null;

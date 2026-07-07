@@ -156,16 +156,10 @@ const telHref = `tel:${SITE.phone.replace(/\s/g, '')}`;
     <div class="container">
       <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>din feed</span>
       <h2 class="h-lg">Ultimele povești</h2>
-      <p class="lead mt-2">Aici vor sta reelsurile reale de la nunți. Momentan, locul lor.</p>
-      <div class="feed mt-3" role="list">
-        <div role="listitem"><div class="reel"><div class="reel-cap" style="font-size:1.2rem;">primul dans.</div><span class="reel-mark"><span class="live-dot" style="width:.4em;height:.4em;"></span>the bride feed</span></div><span class="feed-cap">@andra &amp; vlad · mai 2026</span></div>
-        <div role="listitem"><div class="reel reel--ink"><div class="reel-cap" style="color:var(--ivory);font-size:1.2rem;">lacrimile<br />lui tata.</div><span class="reel-mark" style="color:var(--ivory);"><span class="live-dot" style="width:.4em;height:.4em;"></span>the bride feed</span></div><span class="feed-cap">@maria · iunie 2026</span></div>
-        <div role="listitem"><div class="reel"><div class="reel-cap" style="font-size:1.2rem;">voalul.</div><span class="reel-mark"><span class="live-dot" style="width:.4em;height:.4em;"></span>the bride feed</span></div><span class="feed-cap">@ioana &amp; andrei · iulie 2026</span></div>
-        <div role="listitem"><div class="reel reel--ink"><div class="reel-cap" style="color:var(--ivory);font-size:1.2rem;">aruncatul<br />buchetului.</div><span class="reel-mark" style="color:var(--ivory);"><span class="live-dot" style="width:.4em;height:.4em;"></span>the bride feed</span></div><span class="feed-cap">@elena &amp; radu · august 2026</span></div>
-        <div role="listitem"><div class="reel"><div class="reel-cap" style="font-size:1.2rem;">ora 2 noaptea.</div><span class="reel-mark"><span class="live-dot" style="width:.4em;height:.4em;"></span>the bride feed</span></div><span class="feed-cap">@dana &amp; mihai · sept 2026</span></div>
-        <div role="listitem"><div class="reel reel--ink"><div class="reel-cap" style="color:var(--ivory);font-size:1.5rem;">„da”.</div><span class="reel-mark" style="color:var(--ivory);"><span class="live-dot" style="width:.4em;height:.4em;"></span>the bride feed</span></div><span class="feed-cap">@alina &amp; tudor · sept 2026</span></div>
+      <p class="lead mt-2">Ultimele clipuri filmate la nunți, direct de pe Instagram și TikTok.</p>
+      <div class="portfolio-grid mt-3" id="feed-grid" role="list">
+        <p class="pf-empty">Se încarcă…</p>
       </div>
-      <span class="feed-cap">↔ trage pentru a derula · aici vor veni embed-uri Instagram &amp; TikTok</span>
       <div class="hero-cta" style="margin-top: 1.8rem;">
         <a href="/portofoliu/" class="btn btn-primary">Vezi portofoliul complet</a>
       </div>
@@ -258,4 +252,13 @@ const telHref = `tel:${SITE.phone.replace(/\s/g, '')}`;
       </div>
     </div>
   </section>
+
+  <script>
+    import { listPortfolio, subscribePortfolio } from '../lib/store.js';
+    import { renderEmbeds } from '../lib/embeds.js';
+    const grid = document.getElementById('feed-grid');
+    async function load() { renderEmbeds(grid, (await listPortfolio()).slice(0, 4)); }
+    load();
+    subscribePortfolio(load);
+  </script>
 </Base>

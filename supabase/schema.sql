@@ -146,3 +146,28 @@ create policy "admin delete leads" on public.leads
   for delete to authenticated using (true);
 
 alter publication supabase_realtime add table public.leads;
+
+-- 8. Portofoliu (clipuri IG/TikTok afișate pe /portofoliu și pe homepage)
+-- PUBLIC poate citi; doar adminul autentificat poate scrie.
+create table if not exists public.portfolio (
+  id uuid primary key default gen_random_uuid(),
+  url text not null,
+  caption text,
+  sort int not null default 0,
+  created_at timestamptz default now()
+);
+alter table public.portfolio enable row level security;
+
+drop policy if exists "public read portfolio" on public.portfolio;
+create policy "public read portfolio" on public.portfolio
+  for select to anon, authenticated using (true);
+
+drop policy if exists "admin write portfolio" on public.portfolio;
+create policy "admin write portfolio" on public.portfolio
+  for all to authenticated using (true) with check (true);
+
+do $$
+begin
+  alter publication supabase_realtime add table public.portfolio;
+exception when duplicate_object then null;
+end $$;

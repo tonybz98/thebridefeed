@@ -54,6 +54,7 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         </button>
         <button type="button" class="admin-tab" data-tab="calendar" role="tab">Calendar</button>
         <button type="button" class="admin-tab" data-tab="bani" role="tab">Bani</button>
+        <button type="button" class="admin-tab" data-tab="portofoliu" role="tab">Portofoliu</button>
       </nav>
 
       <!-- TAB: CERERI -->
@@ -98,6 +99,28 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       <!-- TAB: BANI -->
       <div class="admin-panel" data-panel="bani" hidden>
         <div id="crmdash"></div>
+      </div>
+
+      <!-- TAB: PORTOFOLIU -->
+      <div class="admin-panel" data-panel="portofoliu" hidden>
+        <div class="admin-card" style="margin-bottom: 1.2rem;">
+          <div class="admin-card-head">
+            <h3 class="admin-card-title">Adaugă un clip</h3>
+            <span class="admin-card-hint">lipește link de Instagram sau TikTok</span>
+          </div>
+          <form id="pf-form" class="pf-add">
+            <input type="url" id="pf-url" required placeholder="https://www.instagram.com/reel/… sau https://www.tiktok.com/@…/video/…" />
+            <input type="text" id="pf-caption" placeholder="Descriere (opțional), ex. Andra & Vlad" />
+            <button type="submit" class="btn btn-primary">Adaugă</button>
+          </form>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h3 class="admin-card-title">Clipuri</h3>
+            <span class="admin-card-hint" id="pf-count"></span>
+          </div>
+          <div class="pf-admin-list" id="pf-admin-list"></div>
+        </div>
       </div>
 
     </div>
@@ -576,8 +599,10 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       renderKanban();
       renderSummary();
       renderCrmDashboard();
+      pfLoad();
       store.subscribe(refresh);
       store.subscribeLeads(refreshLeads);
+      store.subscribePortfolio(pfLoad);
     }
 
     document.getElementById('form')?.addEventListener('submit', async (e) => {
@@ -631,6 +656,60 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
 
     document.getElementById('exp-csv')?.addEventListener('click', exportCSV);
     document.getElementById('exp-xls')?.addEventListener('click', exportXLS);
+
+    // ---- portofoliu (clipuri) ----
+    let pfItems = [];
+    async function pfLoad() { pfItems = await store.listPortfolio(); pfRender(); }
+    function pfRender() {
+      const el = document.getElementById('pf-admin-list');
+      if (!el) return;
+      const cnt = document.getElementById('pf-count');
+      if (cnt) cnt.textContent = pfItems.length ? pfItems.length + (pfItems.length === 1 ? ' clip' : ' clipuri') : '';
+      if (!pfItems.length) { el.innerHTML = '<p class="bk-meta">Niciun clip încă. Adaugă primul mai sus.</p>'; return; }
+      el.innerHTML = pfItems.map((p, i) => {
+        const plat = /instagram/i.test(p.url) ? 'IG' : (/tiktok/i.test(p.url) ? 'TT' : '?');
+        return `<div class="pf-row" data-id="${p.id}">
+            <span class="pf-plat">${plat}</span>
+            <div class="pf-row-main"><a class="pf-row-url" href="${p.url}" target="_blank" rel="noopener">${p.url}</a>${p.caption ? `<div class="pf-row-cap">${p.caption}</div>` : ''}</div>
+            <div class="pf-row-actions">
+              <button type="button" class="kmove-btn" data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="Mută sus">▲</button>
+              <button type="button" class="kmove-btn" data-mv="down" ${i === pfItems.length - 1 ? 'disabled' : ''} aria-label="Mută jos">▼</button>
+              <button type="button" class="bk-del" data-del>Șterge</button>
+            </div>
+          </div>`;
+      }).join('');
+      el.querySelectorAll('.pf-row').forEach((row) => {
+        const id = (row as HTMLElement).dataset.id;
+        row.querySelector('[data-del]')?.addEventListener('click', async () => {
+          if (!confirm('Ștergi acest clip din portofoliu?')) return;
+          try { await store.deletePortfolio(id); await pfLoad(); } catch (err) { alert('Eroare: ' + (err?.message || err)); }
+        });
+        row.querySelector('[data-mv="up"]')?.addEventListener('click', () => pfMove(id, -1));
+        row.querySelector('[data-mv="down"]')?.addEventListener('click', () => pfMove(id, 1));
+      });
+    }
+    async function pfMove(id, dir) {
+      const i = pfItems.findIndex((x) => x.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= pfItems.length) return;
+      const arr = pfItems.slice();
+      const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      try {
+        await Promise.all(arr.map((p, idx) => (p.sort !== idx ? store.updatePortfolio(p.id, { sort: idx }) : null)).filter(Boolean));
+        await pfLoad();
+      } catch (err) { alert('Eroare: ' + (err?.message || err)); }
+    }
+    document.getElementById('pf-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = (document.getElementById('pf-url') as HTMLInputElement).value.trim();
+      const caption = (document.getElementById('pf-caption') as HTMLInputElement).value.trim();
+      if (!url) return;
+      try {
+        await store.addPortfolio({ url, caption, sort: pfItems.length });
+        (document.getElementById('pf-form') as HTMLFormElement).reset();
+        await pfLoad();
+      } catch (err) { alert('Eroare la adăugare: ' + (err?.message || err)); }
+    });
 
     // ---- tab-uri, căutare, filtru ----
     document.querySelectorAll('.admin-tab').forEach((t) => {
