@@ -30,6 +30,6 @@ export const SITE = {
 // Pachetele și prețul (folosit în /admin pentru estimarea încasărilor și în formulare)
 export const PACKAGES = [
   { name: 'Essential', price: 1200 },
-  { name: 'Full Day', price: 1700 },
-  { name: 'Premium', price: 2500 },
+  { name: 'Premium', price: 1700 },
+  { name: 'Full Day', price: 2500 },
 ];
