@@ -8,7 +8,7 @@ export const SITE = {
   phone: '0751 022 832',
   whatsapp: 'https://wa.me/40751022832',
   instagram: 'https://instagram.com/thebridefeedro',
-  tiktok: 'https://www.tiktok.com/@thebridefeed',
+  tiktok: 'https://www.tiktok.com/@thebridefeed.ro',
   city: 'București',
   region: 'București și Ilfov',
   radiusKm: 200,
