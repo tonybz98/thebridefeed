@@ -176,6 +176,17 @@ export async function listPortfolio() {
   return localPf().sort((a, b) => (a.sort - b.sort) || String(a.created_at).localeCompare(b.created_at));
 }
 
+// ADMIN: încarcă un fișier video în Supabase Storage și întoarce URL-ul public.
+export async function uploadPortfolioVideo(file) {
+  if (!REMOTE) throw new Error('Încărcarea necesită conexiune Supabase.');
+  const ext = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
+  const path = 'clip-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  const { error } = await supabase.storage.from('portfolio').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'video/mp4' });
+  if (error) throw error;
+  const { data } = supabase.storage.from('portfolio').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 // ADMIN: adaugă / editează / șterge (necesită autentificare în REMOTE).
 export async function addPortfolio(item) {
   if (REMOTE) {

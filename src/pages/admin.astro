@@ -106,10 +106,10 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         <div class="admin-card" style="margin-bottom: 1.2rem;">
           <div class="admin-card-head">
             <h3 class="admin-card-title">Adaugă un clip</h3>
-            <span class="admin-card-hint">lipește link de Instagram sau TikTok</span>
+            <span class="admin-card-hint">urcă un fișier video vertical (MP4)</span>
           </div>
           <form id="pf-form" class="pf-add">
-            <input type="url" id="pf-url" required placeholder="https://www.instagram.com/reel/… sau https://www.tiktok.com/@…/video/…" />
+            <input type="file" id="pf-file" accept="video/*" required />
             <input type="text" id="pf-caption" placeholder="Descriere (opțional), ex. Andra & Vlad" />
             <button type="submit" class="btn btn-primary">Adaugă</button>
           </form>
@@ -667,10 +667,9 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       if (cnt) cnt.textContent = pfItems.length ? pfItems.length + (pfItems.length === 1 ? ' clip' : ' clipuri') : '';
       if (!pfItems.length) { el.innerHTML = '<p class="bk-meta">Niciun clip încă. Adaugă primul mai sus.</p>'; return; }
       el.innerHTML = pfItems.map((p, i) => {
-        const plat = /instagram/i.test(p.url) ? 'IG' : (/tiktok/i.test(p.url) ? 'TT' : '?');
         return `<div class="pf-row" data-id="${p.id}">
-            <span class="pf-plat">${plat}</span>
-            <div class="pf-row-main"><a class="pf-row-url" href="${p.url}" target="_blank" rel="noopener">${p.url}</a>${p.caption ? `<div class="pf-row-cap">${p.caption}</div>` : ''}</div>
+            <span class="pf-plat">▶</span>
+            <div class="pf-row-main"><div class="pf-row-cap">${p.caption || '(fără descriere)'}</div><a class="pf-row-url" href="${p.url}" target="_blank" rel="noopener">vezi clipul ↗</a></div>
             <div class="pf-row-actions">
               <button type="button" class="kmove-btn" data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="Mută sus">▲</button>
               <button type="button" class="kmove-btn" data-mv="down" ${i === pfItems.length - 1 ? 'disabled' : ''} aria-label="Mută jos">▼</button>
@@ -701,14 +700,20 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     }
     document.getElementById('pf-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const url = (document.getElementById('pf-url') as HTMLInputElement).value.trim();
+      const fileInput = document.getElementById('pf-file') as HTMLInputElement;
+      const file = fileInput.files && fileInput.files[0];
       const caption = (document.getElementById('pf-caption') as HTMLInputElement).value.trim();
-      if (!url) return;
+      if (!file) return;
+      const btn = (e.target as HTMLElement).querySelector('button[type="submit"]') as HTMLButtonElement;
+      const label = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Se încarcă…'; }
       try {
+        const url = await store.uploadPortfolioVideo(file);
         await store.addPortfolio({ url, caption, sort: pfItems.length });
         (document.getElementById('pf-form') as HTMLFormElement).reset();
         await pfLoad();
-      } catch (err) { alert('Eroare la adăugare: ' + (err?.message || err)); }
+      } catch (err) { alert('Eroare la încărcare: ' + (err?.message || err)); }
+      finally { if (btn) { btn.disabled = false; btn.textContent = label; } }
     });
 
     // ---- tab-uri, căutare, filtru ----

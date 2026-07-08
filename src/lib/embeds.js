@@ -1,37 +1,13 @@
-// the bride feed — randează embed-uri Instagram / TikTok pornind de la un URL.
-// Folosit pe /portofoliu și în secțiunea „din feed" de pe homepage.
+// the bride feed — randează clipurile din portofoliu ca video-uri găzduite de noi,
+// în carduri verticale curate (stil „reel"), cu play inline. Folosit pe /portofoliu și homepage.
 
 function esc(s) {
   return String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
-function platform(url) {
-  if (/instagram\.com/i.test(url)) return 'instagram';
-  if (/tiktok\.com/i.test(url)) return 'tiktok';
-  return 'other';
+function isVideo(url) {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) || /\/storage\/v1\/object\//.test(url);
 }
-function tiktokId(url) {
-  const m = String(url).match(/\/video\/(\d+)/);
-  return m ? m[1] : '';
-}
-function loadOnce(key, src, onload) {
-  if (document.querySelector('script[data-tbf-embed="' + key + '"]')) { if (onload) onload(); return; }
-  const s = document.createElement('script');
-  s.src = src; s.async = true; s.setAttribute('data-tbf-embed', key);
-  if (onload) s.onload = onload;
-  document.body.appendChild(s);
-}
-function processInstagram() {
-  if (window.instgrm && window.instgrm.Embeds) { window.instgrm.Embeds.process(); return; }
-  loadOnce('ig', 'https://www.instagram.com/embed.js', () => window.instgrm && window.instgrm.Embeds.process());
-}
-function processTikTok() {
-  // Reîncărcăm scriptul ca să proceseze blockquote-urile nou adăugate.
-  const prev = document.querySelector('script[data-tbf-embed="tt"]');
-  if (prev) prev.remove();
-  const s = document.createElement('script');
-  s.src = 'https://www.tiktok.com/embed.js'; s.async = true; s.setAttribute('data-tbf-embed', 'tt');
-  document.body.appendChild(s);
-}
+const PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
 
 export function renderEmbeds(container, items) {
   if (!container) return;
@@ -39,20 +15,32 @@ export function renderEmbeds(container, items) {
     container.innerHTML = '<p class="pf-empty">Clipurile apar aici în curând.</p>';
     return;
   }
-  let ig = false, tt = false;
   container.innerHTML = items.map((it) => {
-    const p = platform(it.url);
     const cap = it.caption ? '<span class="feed-cap">' + esc(it.caption) + '</span>' : '';
-    if (p === 'instagram') {
-      ig = true;
-      return '<div class="pf-item"><blockquote class="instagram-media" data-instgrm-permalink="' + esc(it.url) + '" data-instgrm-version="14" style="margin:0;min-width:0;width:100%;"></blockquote>' + cap + '</div>';
+    if (isVideo(it.url)) {
+      return '<div class="pf-item"><div class="pf-video">'
+        + '<video src="' + esc(it.url) + '" playsinline preload="metadata" muted loop></video>'
+        + '<button class="pf-play" type="button" aria-label="Redă clipul">' + PLAY + '</button>'
+        + '</div>' + cap + '</div>';
     }
-    if (p === 'tiktok') {
-      tt = true;
-      return '<div class="pf-item"><blockquote class="tiktok-embed" cite="' + esc(it.url) + '" data-video-id="' + tiktokId(it.url) + '" style="margin:0;max-width:100%;min-width:0;"><section></section></blockquote>' + cap + '</div>';
-    }
+    // fallback: link simplu dacă nu e video
     return '<div class="pf-item"><a class="pf-link" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.caption || 'Vezi clipul') + ' ↗</a></div>';
   }).join('');
-  if (ig) processInstagram();
-  if (tt) processTikTok();
+
+  container.querySelectorAll('.pf-video').forEach((box) => {
+    const v = box.querySelector('video');
+    if (!v) return;
+    box.addEventListener('click', () => {
+      // pune pe pauză celelalte clipuri
+      container.querySelectorAll('.pf-video video').forEach((o) => { if (o !== v) { o.pause(); o.parentElement.classList.remove('playing'); } });
+      if (v.paused) {
+        v.muted = false;
+        v.controls = true;
+        box.classList.add('playing');
+        v.play();
+      } else {
+        v.pause();
+      }
+    });
+  });
 }
