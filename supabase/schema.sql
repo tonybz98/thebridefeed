@@ -171,3 +171,16 @@ begin
   alter publication supabase_realtime add table public.portfolio;
 exception when duplicate_object then null;
 end $$;
+
+-- 9. Storage: bucket public pentru fișierele video din portofoliu
+insert into storage.buckets (id, name, public)
+values ('portfolio', 'portfolio', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "public read portfolio files" on storage.objects;
+create policy "public read portfolio files" on storage.objects
+  for select to anon, authenticated using (bucket_id = 'portfolio');
+
+drop policy if exists "admin write portfolio files" on storage.objects;
+create policy "admin write portfolio files" on storage.objects
+  for all to authenticated using (bucket_id = 'portfolio') with check (bucket_id = 'portfolio');
