@@ -18,8 +18,10 @@ export function renderEmbeds(container, items) {
   container.innerHTML = items.map((it) => {
     const cap = it.caption ? '<span class="feed-cap">' + esc(it.caption) + '</span>' : '';
     if (isVideo(it.url)) {
+      // #t=0.1 => pe iOS afișează cadrul de la 0.1s ca previzualizare (altfel e negru).
+      const poster = it.poster ? ' poster="' + esc(it.poster) + '"' : '';
       return '<div class="pf-item"><div class="pf-video">'
-        + '<video src="' + esc(it.url) + '" playsinline preload="metadata" muted loop></video>'
+        + '<video src="' + esc(it.url) + '#t=0.1"' + poster + ' playsinline preload="metadata" muted loop></video>'
         + '<button class="pf-play" type="button" aria-label="Redă clipul">' + PLAY + '</button>'
         + '</div>' + cap + '</div>';
     }
