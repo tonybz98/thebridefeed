@@ -593,3 +593,9 @@ body.cc-open .wa-fab { opacity: 0; pointer-events: none; }
 .pf-row-cap { font-size: .88rem; color: var(--ink-2); margin-top: .15rem; }
 .pf-row-actions { display: flex; gap: .35rem; flex: none; }
 .pf-row-actions .bk-del { font-size: .8rem; }
+.pf-field { display: flex; flex-direction: column; gap: .3rem; flex: 1 1 190px; }
+.pf-field-lab { font-family: var(--f-mono); font-size: .64rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pf-field input[type="file"] { font-size: .82rem; }
+.pf-row-thumb { flex: none; width: 34px; height: 46px; border-radius: 8px; object-fit: cover; background: var(--ink); }
+.pf-cover-btn { font-size: .76rem; padding: .45em .8em; }
+.pf-row-actions { flex-wrap: wrap; justify-content: flex-end; }

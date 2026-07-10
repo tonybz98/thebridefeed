@@ -176,12 +176,12 @@ export async function listPortfolio() {
   return localPf().sort((a, b) => (a.sort - b.sort) || String(a.created_at).localeCompare(b.created_at));
 }
 
-// ADMIN: încarcă un fișier video în Supabase Storage și întoarce URL-ul public.
-export async function uploadPortfolioVideo(file) {
+// ADMIN: încarcă un fișier (video sau copertă) în Supabase Storage și întoarce URL-ul public.
+export async function uploadPortfolioFile(file, prefix) {
   if (!REMOTE) throw new Error('Încărcarea necesită conexiune Supabase.');
-  const ext = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
-  const path = 'clip-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-  const { error } = await supabase.storage.from('portfolio').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'video/mp4' });
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
+  const path = (prefix || 'file') + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  const { error } = await supabase.storage.from('portfolio').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'application/octet-stream' });
   if (error) throw error;
   const { data } = supabase.storage.from('portfolio').getPublicUrl(path);
   return data.publicUrl;
@@ -190,12 +190,12 @@ export async function uploadPortfolioVideo(file) {
 // ADMIN: adaugă / editează / șterge (necesită autentificare în REMOTE).
 export async function addPortfolio(item) {
   if (REMOTE) {
-    const { error } = await supabase.from('portfolio').insert({ url: item.url, caption: item.caption || null, sort: item.sort || 0 });
+    const { error } = await supabase.from('portfolio').insert({ url: item.url, caption: item.caption || null, poster: item.poster || null, sort: item.sort || 0 });
     if (error) throw error;
     return;
   }
   const list = localPf();
-  list.push({ id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), url: item.url, caption: item.caption || '', sort: item.sort || 0, created_at: new Date().toISOString() });
+  list.push({ id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), url: item.url, caption: item.caption || '', poster: item.poster || '', sort: item.sort || 0, created_at: new Date().toISOString() });
   localPfPersist(list);
 }
 

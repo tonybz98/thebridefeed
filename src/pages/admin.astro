@@ -109,10 +109,12 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
             <span class="admin-card-hint">urcă un fișier video vertical (MP4)</span>
           </div>
           <form id="pf-form" class="pf-add">
-            <input type="file" id="pf-file" accept="video/*" required />
+            <label class="pf-field"><span class="pf-field-lab">Video (MP4)</span><input type="file" id="pf-file" accept="video/*" required /></label>
+            <label class="pf-field"><span class="pf-field-lab">Copertă (opțional)</span><input type="file" id="pf-poster" accept="image/*" /></label>
             <input type="text" id="pf-caption" placeholder="Descriere (opțional), ex. Andra & Vlad" />
             <button type="submit" class="btn btn-primary">Adaugă</button>
           </form>
+          <input type="file" id="pf-poster-input" accept="image/*" hidden />
         </div>
         <div class="admin-card">
           <div class="admin-card-head">
@@ -659,6 +661,7 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
 
     // ---- portofoliu (clipuri) ----
     let pfItems = [];
+    let pfPosterFor = null;
     async function pfLoad() { pfItems = await store.listPortfolio(); pfRender(); }
     function pfRender() {
       const el = document.getElementById('pf-admin-list');
@@ -667,10 +670,12 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       if (cnt) cnt.textContent = pfItems.length ? pfItems.length + (pfItems.length === 1 ? ' clip' : ' clipuri') : '';
       if (!pfItems.length) { el.innerHTML = '<p class="bk-meta">Niciun clip încă. Adaugă primul mai sus.</p>'; return; }
       el.innerHTML = pfItems.map((p, i) => {
+        const thumb = p.poster ? `<img class="pf-row-thumb" src="${p.poster}" alt="" />` : '<span class="pf-plat">▶</span>';
         return `<div class="pf-row" data-id="${p.id}">
-            <span class="pf-plat">▶</span>
+            ${thumb}
             <div class="pf-row-main"><div class="pf-row-cap">${p.caption || '(fără descriere)'}</div><a class="pf-row-url" href="${p.url}" target="_blank" rel="noopener">vezi clipul ↗</a></div>
             <div class="pf-row-actions">
+              <button type="button" class="btn btn-ghost pf-cover-btn" data-poster>${p.poster ? 'Schimbă coperta' : 'Adaugă copertă'}</button>
               <button type="button" class="kmove-btn" data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="Mută sus">▲</button>
               <button type="button" class="kmove-btn" data-mv="down" ${i === pfItems.length - 1 ? 'disabled' : ''} aria-label="Mută jos">▼</button>
               <button type="button" class="bk-del" data-del>Șterge</button>
@@ -685,6 +690,7 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         });
         row.querySelector('[data-mv="up"]')?.addEventListener('click', () => pfMove(id, -1));
         row.querySelector('[data-mv="down"]')?.addEventListener('click', () => pfMove(id, 1));
+        row.querySelector('[data-poster]')?.addEventListener('click', () => { pfPosterFor = id; document.getElementById('pf-poster-input')?.click(); });
       });
     }
     async function pfMove(id, dir) {
@@ -704,16 +710,30 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       const file = fileInput.files && fileInput.files[0];
       const caption = (document.getElementById('pf-caption') as HTMLInputElement).value.trim();
       if (!file) return;
+      const posterFile = (document.getElementById('pf-poster') as HTMLInputElement).files?.[0];
       const btn = (e.target as HTMLElement).querySelector('button[type="submit"]') as HTMLButtonElement;
       const label = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Se încarcă…'; }
       try {
-        const url = await store.uploadPortfolioVideo(file);
-        await store.addPortfolio({ url, caption, sort: pfItems.length });
+        const url = await store.uploadPortfolioFile(file, 'clip');
+        let poster = null;
+        if (posterFile) poster = await store.uploadPortfolioFile(posterFile, 'poster');
+        await store.addPortfolio({ url, poster, caption, sort: pfItems.length });
         (document.getElementById('pf-form') as HTMLFormElement).reset();
         await pfLoad();
       } catch (err) { alert('Eroare la încărcare: ' + (err?.message || err)); }
       finally { if (btn) { btn.disabled = false; btn.textContent = label; } }
+    });
+    document.getElementById('pf-poster-input')?.addEventListener('change', async (e) => {
+      const f = (e.target as HTMLInputElement).files?.[0];
+      (e.target as HTMLInputElement).value = '';
+      if (!f || !pfPosterFor) return;
+      try {
+        const purl = await store.uploadPortfolioFile(f, 'poster');
+        await store.updatePortfolio(pfPosterFor, { poster: purl });
+        pfPosterFor = null;
+        await pfLoad();
+      } catch (err) { alert('Eroare la copertă: ' + (err?.message || err)); }
     });
 
     // ---- tab-uri, căutare, filtru ----

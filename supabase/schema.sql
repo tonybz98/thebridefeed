@@ -153,10 +153,13 @@ create table if not exists public.portfolio (
   id uuid primary key default gen_random_uuid(),
   url text not null,
   caption text,
+  poster text,
   sort int not null default 0,
   created_at timestamptz default now()
 );
 alter table public.portfolio enable row level security;
+-- dacă tabelul exista deja fără coloana de copertă:
+alter table public.portfolio add column if not exists poster text;
 
 drop policy if exists "public read portfolio" on public.portfolio;
 create policy "public read portfolio" on public.portfolio
