@@ -119,7 +119,10 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         <div class="admin-card">
           <div class="admin-card-head">
             <h3 class="admin-card-title">Clipuri</h3>
-            <span class="admin-card-hint" id="pf-count"></span>
+            <div style="display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;">
+              <span class="admin-card-hint" id="pf-count"></span>
+              <button type="button" class="btn btn-ghost" id="pf-backfill" style="font-size: .8rem; padding: .5em 1em;">Generează coperți lipsă</button>
+            </div>
           </div>
           <div class="pf-admin-list" id="pf-admin-list"></div>
         </div>
@@ -663,6 +666,29 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
     let pfItems = [];
     let pfPosterFor = null;
     async function pfLoad() { pfItems = await store.listPortfolio(); pfRender(); }
+
+    // Generează o copertă (JPEG) dintr-un cadru al clipului. `src` poate fi un File sau un URL.
+    function posterFromSource(src) {
+      return new Promise((resolve) => {
+        let done = false;
+        const v = document.createElement('video');
+        v.muted = true; (v as any).playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous';
+        const objUrl = typeof src === 'string' ? src : URL.createObjectURL(src);
+        const finish = (blob) => { if (done) return; done = true; if (typeof src !== 'string') URL.revokeObjectURL(objUrl); resolve(blob); };
+        v.onloadeddata = () => { try { v.currentTime = Math.min(1, (v.duration || 2) / 3); } catch (e) { finish(null); } };
+        v.onseeked = () => {
+          try {
+            const c = document.createElement('canvas');
+            c.width = v.videoWidth || 720; c.height = v.videoHeight || 1280;
+            c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+            c.toBlob((b) => finish(b), 'image/jpeg', 0.82);
+          } catch (e) { finish(null); }
+        };
+        v.onerror = () => finish(null);
+        setTimeout(() => finish(null), 10000);
+        v.src = objUrl;
+      });
+    }
     function pfRender() {
       const el = document.getElementById('pf-admin-list');
       if (!el) return;
@@ -717,7 +743,13 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
       try {
         const url = await store.uploadPortfolioFile(file, 'clip');
         let poster = null;
-        if (posterFile) poster = await store.uploadPortfolioFile(posterFile, 'poster');
+        if (posterFile) {
+          poster = await store.uploadPortfolioFile(posterFile, 'poster');
+        } else {
+          if (btn) btn.textContent = 'Generez coperta…';
+          const b = await posterFromSource(file);
+          if (b) poster = await store.uploadPortfolioFile(new File([b], 'auto-poster.jpg', { type: 'image/jpeg' }), 'poster');
+        }
         await store.addPortfolio({ url, poster, caption, sort: pfItems.length });
         (document.getElementById('pf-form') as HTMLFormElement).reset();
         await pfLoad();
@@ -734,6 +766,30 @@ const remote = !!(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_
         pfPosterFor = null;
         await pfLoad();
       } catch (err) { alert('Eroare la copertă: ' + (err?.message || err)); }
+    });
+    document.getElementById('pf-backfill')?.addEventListener('click', async (e) => {
+      const btn = e.target as HTMLButtonElement;
+      const missing = pfItems.filter((p) => !p.poster);
+      if (!missing.length) { alert('Toate clipurile au deja copertă.'); return; }
+      if (!confirm('Generez coperți pentru ' + missing.length + ' clip(uri)? Poate dura puțin.')) return;
+      btn.disabled = true;
+      let ok = 0;
+      for (let i = 0; i < missing.length; i++) {
+        const p = missing[i];
+        btn.textContent = 'Generez… ' + (i + 1) + '/' + missing.length;
+        try {
+          const blob = await fetch(p.url).then((r) => r.blob());
+          const b = await posterFromSource(blob);
+          if (b) {
+            const purl = await store.uploadPortfolioFile(new File([b], 'auto-poster.jpg', { type: 'image/jpeg' }), 'poster');
+            await store.updatePortfolio(p.id, { poster: purl });
+            ok++;
+          }
+        } catch (err) { console.error('backfill', err); }
+      }
+      btn.disabled = false; btn.textContent = 'Generează coperți lipsă';
+      await pfLoad();
+      alert('Gata: ' + ok + ' din ' + missing.length + ' coperți generate.');
     });
 
     // ---- tab-uri, căutare, filtru ----
